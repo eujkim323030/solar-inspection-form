@@ -1,5 +1,5 @@
 // 한 번 열면 인터넷 없는 현장에서도 열리도록 캐시. 배포할 때마다 VERSION을 올린다.
-const VERSION = 'suggeom-v4';
+const VERSION = 'suggeom-v5';
 const BG = ['p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10', 'p11', 'p12', 'p14', 'p15', 'p16', 'p17', 'p18', 'p19', 'p20'].map(p => `bg/${p}.png`);
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'fields.json', 'template.pdf', ...BG];
 const CDN = ['https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js'];

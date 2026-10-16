@@ -183,9 +183,8 @@ const CAN_SHARE = (() => {
 })();
 const SEND_LABEL = CAN_SHARE ? '카톡으로 보내기' : 'PDF 저장';
 const SEND_HTML = CAN_SHARE ? '<span class="long">카톡으로 </span>보내기' : 'PDF 저장';   // 폰처럼 좁으면 "보내기"만
-// 칸 입력 방식: 'pen'(손글씨, 기본 — 아빠는 대부분 손으로 쓰신다) 또는 'kb'(글자). 마지막에 고른 쪽을 기억.
+// 칸 입력 방식: 'pen'(손글씨) 또는 'kb'(글자). 아빠는 대부분 손으로 쓰셔서 칸을 누르면 언제나 손글씨로 시작한다.
 let inputMode = 'pen', penSeen = false, inkAt = 0;
-try { inputMode = localStorage.getItem('inputMode') || 'pen'; } catch (e) { /* 기본값 */ }
 
 // ---------- 서식 정보 (tools/build.py 가 공식 서식 PDF에서 뽑은 칸 좌표) ----------
 let META = [];
@@ -674,9 +673,11 @@ function viewDoc(site, focusSheet) {
     if (sec && e.target.closest('[data-more]')) sheetMenu(pages.get(sec.dataset.sh));
   });
 
-  // 쓰는 판 (화면 아래에서 올라온다). 손글씨·글자 중 고른 방식은 기억해 둔다.
-  function openEdit(p, f) {
+  // 쓰는 판 (화면 아래에서 올라온다). 칸을 직접 누르면 손글씨로 시작하고,
+  // [아래]/[옆]으로 넘어갈 때만 지금 쓰던 방식(글자로 바꿨으면 글자)을 이어 간다.
+  function openEdit(p, f, keepMode) {
     commitEdit();
+    if (!keepMode) inputMode = 'pen';
     active = { p, f }; editOld = p.sh.v[f.id];
     $('#elab').textContent = `${sheetName(site, p.sh)} · ${f.label || '입력'}${f.unit ? ` ${f.unit}` : ''}`;
     document.body.classList.add('editing');
@@ -701,7 +702,6 @@ function viewDoc(site, focusSheet) {
     const b = e.target.closest('[data-mode]');
     if (!b || !active) return;
     inputMode = b.dataset.mode;
-    try { localStorage.setItem('inputMode', inputMode); } catch (err) { /* 기억 못 해도 동작 */ }
     mountEditor();
   };
   function mountInput(p, f) {
@@ -816,13 +816,13 @@ function viewDoc(site, focusSheet) {
   }
   function move(step) {
     const { p, f } = active, n = p.m.inputs[p.m.inputs.indexOf(f) + step];
-    if (n) openEdit(p, n); else closeEdit();
+    if (n) openEdit(p, n, true); else closeEdit();
   }
   $('#enx').onclick = () => move(1);
   $('#edn').onclick = () => {   // 바로 아래 칸 (같은 열)
     const { p, f } = active, cx = (f.r[0] + f.r[2]) / 2;
     const below = p.m.inputs.filter(g => g.r[1] >= f.r[3] - 1 && g.r[0] - 1 <= cx && cx <= g.r[2] + 1).sort((a, b) => a.r[1] - b.r[1]);
-    if (below[0]) openEdit(p, below[0]); else move(1);
+    if (below[0]) openEdit(p, below[0], true); else move(1);
   };
   $('#eok').onclick = closeEdit;
   $('#ekb').onclick = () => {
