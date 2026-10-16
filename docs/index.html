@@ -384,7 +384,7 @@ addEventListener('visibilitychange', async () => {
 // 기기마다 ① 지운 현장을 알리고 ② 만들거나 고친 현장을 올리고 ③ 다른 기기에서 고친 현장을 받아 온다.
 // 같은 현장을 두 기기에서 고치면 나중에 올린 쪽이 남는다. 인터넷이 없으면 기기에 먼저 저장했다가 연결되면 맞춘다.
 // 팀 코드를 모르면 읽기·쓰기 모두 막힌다. 주소가 비어 있으면 연동 없이 이 기기에만 저장한다.
-const SYNC_URL = '';
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbwXlN-6FlOlD2zTjeSwy4ElXs8JqWveGCzMwzZC_1t1j6wbzufLYqFTdral0rhaPere/exec';
 async function api(action, extra = {}, code) {
   code = code || ((await get('meta', 'team')) || {}).code;
   const res = await fetch(SYNC_URL, { method: 'POST', body: JSON.stringify({ app: 'suggeom', version: 1, code, action, ...extra }) });
