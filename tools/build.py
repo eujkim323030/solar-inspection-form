@@ -138,16 +138,18 @@ def clean(page, pno, ratio):
         g.sort(key=lambda c: c["r"].x0)
         part = [g[0]]
         for c in g[1:]:
-            if c["r"].x0 - part[-1]["r"].x1 > 4:
+            if c["r"].x0 - part[-1]["r"].x1 > 8:   # 띄어쓰기(약 5pt)보다 넓게 떨어지면 다른 칸의 예시값
                 split.append((color, part)); part = []
             part.append(c)
         split.append((color, part))
     out = []
     for color, g in split:
         r = fitz.Rect(g[0]["r"])
-        for c in g[1:]:
+        text = g[0]["c"]
+        for a, c in zip(g, g[1:]):
             r |= c["r"]
-        out.append(dict(text="".join(c["c"] for c in g).strip(), r=r, default=color == DEFAULT_COLOR))
+            text += (" " if c["r"].x0 - a["r"].x1 > 2.5 else "") + c["c"]
+        out.append(dict(text=text.strip(), r=r, default=color == DEFAULT_COLOR))
     return out, [dict(c, c="□") for c in filled]
 
 
@@ -402,7 +404,23 @@ def build_page(page, pno, samples, filled, ratio):
         if f.get("unit") is None:
             f.pop("unit", None)
     fields.sort(key=lambda f: (round(f["r"][1] / 3), f["r"][0]))
-    return fields
+
+    # 서명 자리: '(서명)', '(서명 또는 인)' 글자 위치 (앱이 서명을 그 위에 찍는다)
+    sig = []
+    for row in rows:
+        txt = "".join(c["c"] for c in row)
+        i = txt.find("(서명")
+        while i >= 0:
+            j = txt.find(")", i)
+            if j < 0:
+                break
+            r = fitz.Rect(row[i]["r"])
+            for c in row[i:j + 1]:
+                r |= c["r"]
+            sig.append(R(r))
+            i = txt.find("(서명", j)
+    sig.sort(key=lambda r: (round(r[1]), r[0]))
+    return fields, sig
 
 
 def tag(fields, pno):
@@ -454,7 +472,7 @@ def main():
     for i, (pno, short, title) in enumerate(SHEETS):
         page = out[i]
         samples, filled = clean(page, pno, ratio)
-        fields = build_page(page, pno, samples, filled, ratio)
+        fields, sig = build_page(page, pno, samples, filled, ratio)
         tag(fields, pno)
         tpl = f"p{pno:02d}"
         # 칸 이름 = 칸 왼쪽 위 좌표. 규칙을 고쳐 다시 만들어도 이미 적은 값이 다른 칸으로 밀리지 않게.
@@ -465,7 +483,7 @@ def main():
         assert len(ids) == len(set(ids)), f"{tpl}: 칸 이름 중복"
         page.get_pixmap(matrix=fitz.Matrix(BG_ZOOM, BG_ZOOM)).save(os.path.join(APP, "bg", f"{tpl}.png"))
         meta.append(dict(tpl=tpl, page=i, short=short, title=title,
-                         w=round(page.rect.width, 1), h=round(page.rect.height, 1), fields=fields))
+                         w=round(page.rect.width, 1), h=round(page.rect.height, 1), sig=sig, fields=fields))
         if DBG:
             dbg_page(page, fields, os.path.join(DBG, f"{tpl}.png"))
         kinds = {}
