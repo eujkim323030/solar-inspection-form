@@ -73,22 +73,32 @@
   .tool.pri { background:var(--primary); }
   .tool[hidden] { display:none; }
   .tool.done { background:var(--primary-pale); color:var(--pos-deep); }
-  .ebar { display:none; }
-  .tb.editing .tools { display:none; }
-  .tb.editing .ebar { display:block; }
-  .ebar .lab { font-size:14px; font-weight:700; color:var(--body); margin:0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ebar .ehead { margin-bottom:6px; }
-  .ebar .ebody { align-items:stretch; }
-  .ebar input, .ebar textarea { width:100%; min-height:48px; padding:8px 12px; font-size:20px; border:2px solid var(--focus); border-radius:12px; outline:none; background:var(--canvas); }
-  .ebar textarea { resize:none; height:76px; font-size:17px; line-height:1.35; }
-  .ecol { display:flex; flex-direction:column; gap:6px; }
-  .ebar.kb .ecol { flex-direction:row; }
+  /* 쓰는 판: 칸을 누르면 화면 아래에서 올라온다 (은행 패드 서류처럼) */
+  .panel { position:fixed; left:0; right:0; bottom:0; z-index:12; display:none; background:var(--canvas); border-radius:22px 22px 0 0; box-shadow:0 -6px 24px rgba(14,15,12,.18); padding:12px 12px calc(12px + env(safe-area-inset-bottom)); }
+  body.editing .panel { display:block; }
+  .panel .inner { max-width:1100px; margin:0 auto; }
+  .panel .lab { font-size:15px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .panel .phead { margin-bottom:8px; }
+  .panel .pfoot { margin-top:8px; }
+  .panel input, .panel textarea { width:100%; min-height:52px; padding:10px 14px; font-size:20px; border:2px solid var(--focus); border-radius:14px; outline:none; background:var(--canvas); }
+  .panel textarea { resize:none; height:90px; font-size:17px; line-height:1.35; }
   .seg2 { flex:none; display:flex; gap:3px; padding:3px; background:var(--tint); border-radius:14px; }
   .seg2 button { border:0; background:none; min-height:42px; padding:0 14px; border-radius:11px; font-size:16px; font-weight:700; color:var(--body); cursor:pointer; white-space:nowrap; }
   .seg2 button.on { background:var(--ink); color:#fff; }
-  .hpad { display:block; width:100%; height:170px; border:2px solid var(--focus); border-radius:12px; background:#fff; touch-action:none; }
-  .hpad.area { height:240px; }
+  .hpad { display:block; width:100%; height:clamp(140px, 24vh, 230px); border:2px solid var(--focus); border-radius:14px; background:#fff; touch-action:none; }
+  .hpad.area { height:clamp(180px, 32vh, 300px); }
   .doc { padding:calc(var(--tbh, 66px) + 8px) 6px 40px; }
+  body.editing .doc { padding-bottom:calc(var(--pnh, 300px) + 24px); }
+  .pscroll { max-width:1100px; margin:0 auto; }
+  /* 폰: 서식을 패드와 같은 크기로 보여 주고 좌우로 밀어서 본다 */
+  @media (max-width: 700px) {
+    .pscroll { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -6px; }
+    .pscroll .page { width:760px; max-width:none; margin:0; }
+    .long { display:none; }
+    .tb .ttl { font-size:15px; }
+    .tool { padding:0 10px; }
+    .seg2 button { padding:0 10px; font-size:15px; }
+  }
   .tip { max-width:1100px; margin:4px auto 0; font-size:14px; color:var(--body); text-align:center; }
   .shh { display:flex; align-items:center; gap:8px; max-width:1100px; margin:22px auto 8px; padding:0 2px; }
   .shh .no { flex:none; width:30px; height:30px; border-radius:9999px; background:var(--ink); color:#fff; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; }
@@ -172,6 +182,7 @@ const CAN_SHARE = (() => {
   catch (e) { return false; }
 })();
 const SEND_LABEL = CAN_SHARE ? '카톡으로 보내기' : 'PDF 저장';
+const SEND_HTML = CAN_SHARE ? '<span class="long">카톡으로 </span>보내기' : 'PDF 저장';   // 폰처럼 좁으면 "보내기"만
 // 칸 입력 방식: 'pen'(손글씨, 기본 — 아빠는 대부분 손으로 쓰신다) 또는 'kb'(글자). 마지막에 고른 쪽을 기억.
 let inputMode = 'pen', penSeen = false, inkAt = 0;
 try { inputMode = localStorage.getItem('inputMode') || 'pen'; } catch (e) { /* 기본값 */ }
@@ -525,35 +536,34 @@ function viewDoc(site, focusSheet) {
         <button class="tool" id="bk" aria-label="현장 목록">${I.back}</button>
         <div class="ttl grow">${esc(site.name)}<small>${site.kind}검사 · 서식 ${site.sheets.length}장</small></div>
         <button class="tool ${site.sign ? 'done' : ''}" id="sg">${I.sign}${site.sign ? '서명함' : '서명'}</button>
-        <button class="tool pri" id="send">${I.send}${SEND_LABEL}</button>
-      </div>
-      <div class="ebar">
-        <div class="row ehead">
-          <div class="lab grow" id="elab"></div>
-          <div class="seg2" id="emode"><button data-mode="pen">✍ 손글씨</button><button data-mode="kb">⌨ 글자</button></div>
-          <button class="tool pri" id="eok">완료</button>
-        </div>
-        <div class="row ebody">
-          <div class="grow" id="ewrap"></div>
-          <div class="ecol">
-            <button class="tool" id="eclr">다시 쓰기</button>
-            <button class="tool" id="ekb" aria-label="키보드 바꾸기">123</button>
-            <button class="tool" id="edn">${I.down}아래</button>
-            <button class="tool" id="enx">${I.next}옆</button>
-          </div>
-        </div>
+        <button class="tool pri" id="send">${I.send}${SEND_HTML}</button>
       </div>
     </div>
+    <div class="panel" id="panel"><div class="inner">
+      <div class="row phead">
+        <div class="lab grow" id="elab"></div>
+        <div class="seg2" id="emode"><button data-mode="pen">✍ 손글씨</button><button data-mode="kb">⌨ 글자</button></div>
+      </div>
+      <div id="ewrap"></div>
+      <div class="row pfoot">
+        <button class="tool" id="eclr">다시 쓰기</button>
+        <button class="tool" id="ekb" aria-label="키보드 바꾸기">123</button>
+        <span class="grow"></span>
+        <button class="tool" id="edn">${I.down}아래</button>
+        <button class="tool" id="enx">옆${I.next}</button>
+        <button class="tool pri" id="eok">완료</button>
+      </div>
+    </div></div>
     <div class="doc" id="doc">
       ${IN_APP ? `<div style="max-width:1100px;margin:0 auto">${outsideHelp()}</div>` : ''}
-      <p class="tip">빈칸을 누르면 위에 쓰는 칸이 나와요. 크게 쓰면 서식 칸에 맞게 줄여서 들어가요. 네모(□)는 누르면 체크돼요.</p>
+      <p class="tip">빈칸을 누르면 아래에 쓰는 판이 올라와요. 크게 쓰면 서식 칸에 맞게 줄여서 들어가요. 네모(□)는 누르면 체크돼요.</p>
       ${site.sheets.map((sh, i) => {
         const m = TPL[sh.tpl];
         return `<section data-sh="${sh.id}">
           <div class="shh"><span class="no">${i + 1}</span><b class="grow">${esc(sheetName(site, sh))}</b>
             ${m.goods.length ? '<button class="okbtn" data-ok>✓ 모두 양호</button>' : ''}
             <button class="icon-btn" data-more aria-label="이 장 더보기">${I.more}</button></div>
-          <div class="page" style="aspect-ratio:${m.w}/${m.h}">
+          <div class="pscroll"><div class="page" style="aspect-ratio:${m.w}/${m.h}">
             <img src="bg/${m.tpl}.png" alt="" loading="${i < 2 ? 'eager' : 'lazy'}" decoding="async">
             <canvas></canvas>
             <div class="hits">${m.fields.map(f => {
@@ -561,16 +571,23 @@ function viewDoc(site, focusSheet) {
               return `<div class="hit" data-f="${f.id}" style="left:${r[0] / m.w * 100}%;top:${r[1] / m.h * 100}%;width:${(r[2] - r[0]) / m.w * 100}%;height:${(r[3] - r[1]) / m.h * 100}%"></div>`;
             }).join('')}</div>
             <div class="act"></div>
-          </div>
+          </div></div>
         </section>`;
       }).join('')}
       <div class="docend stack">
-        <button class="btn lg full" id="send2">${I.send}${SEND_LABEL}</button>
+        <button class="btn lg full" id="send2">${I.send}${SEND_HTML}</button>
         <button class="btn ter full" id="more">더보기 (서식 추가 · 이름 바꾸기 · 현장 삭제)</button>
       </div>
     </div>`;
-  const tb = $('#tb');
+  const tb = $('#tb'), panel = $('#panel');
   const setTbh = () => document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px');
+  const setPnh = () => document.documentElement.style.setProperty('--pnh', panel.offsetHeight + 'px');
+  // 키보드가 올라오면 쓰는 판도 키보드 바로 위로 올린다
+  const placePanel = () => {
+    const vv = window.visualViewport;
+    const off = vv ? Math.round(innerHeight - vv.height - vv.offsetTop) : 0;
+    panel.style.transform = off > 40 ? `translateY(${-off}px)` : '';
+  };
   setTbh();
 
   // 장마다 캔버스. 화면 가까이 있는 장만 그리고 먼 장은 비워서 패드 메모리를 아낀다.
@@ -600,12 +617,13 @@ function viewDoc(site, focusSheet) {
     lastW = w; setTbh(); pages.forEach(paint);
   });
   ro.observe(app);
-  // 글자 모드에서 키보드가 올라오면 고른 칸이 키보드에 가리지 않게 다시 맞춘다
-  const onVV = () => { if (active) reveal(active.p, active.f); };
-  if (window.visualViewport) visualViewport.addEventListener('resize', onVV);
+  // 글자 모드에서 키보드가 올라오면 판을 키보드 위로 올리고, 고른 칸이 가리지 않게 다시 맞춘다
+  const onVV = () => { if (!active) return; placePanel(); reveal(active.p, active.f); };
+  if (window.visualViewport) ['resize', 'scroll'].forEach(t => visualViewport.addEventListener(t, onVV));
   viewCleanup = () => {
     io.disconnect(); ro.disconnect(); clearTimeout(pdfTimer);
-    if (window.visualViewport) visualViewport.removeEventListener('resize', onVV);
+    if (window.visualViewport) ['resize', 'scroll'].forEach(t => visualViewport.removeEventListener(t, onVV));
+    document.body.classList.remove('editing');
   };
   const rerender = () => { viewToken++; viewCleanup(); viewDoc(site); };
 
@@ -656,12 +674,12 @@ function viewDoc(site, focusSheet) {
     if (sec && e.target.closest('[data-more]')) sheetMenu(pages.get(sec.dataset.sh));
   });
 
-  // 입력 막대 (화면 위쪽에 고정: 키보드에 가리지 않게). 손글씨·글자 중 고른 방식은 기억해 둔다.
+  // 쓰는 판 (화면 아래에서 올라온다). 손글씨·글자 중 고른 방식은 기억해 둔다.
   function openEdit(p, f) {
     commitEdit();
     active = { p, f }; editOld = p.sh.v[f.id];
     $('#elab').textContent = `${sheetName(site, p.sh)} · ${f.label || '입력'}${f.unit ? ` ${f.unit}` : ''}`;
-    tb.classList.add('editing');
+    document.body.classList.add('editing');
     pages.forEach(q => { q.page.querySelector('.act').style.display = 'none'; });
     const a = p.page.querySelector('.act'), r = f.r;
     Object.assign(a.style, { display: 'block', left: r[0] / p.m.w * 100 + '%', top: r[1] / p.m.h * 100 + '%', width: (r[2] - r[0]) / p.m.w * 100 + '%', height: (r[3] - r[1]) / p.m.h * 100 + '%' });
@@ -669,7 +687,6 @@ function viewDoc(site, focusSheet) {
   }
   function mountEditor() {
     const { p, f } = active, pen = inputMode === 'pen';
-    tb.querySelector('.ebar').classList.toggle('kb', !pen);
     $('#emode').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === inputMode));
     $('#eclr').hidden = !pen;
     $('#ekb').hidden = pen || f.t === 'area';
@@ -677,7 +694,7 @@ function viewDoc(site, focusSheet) {
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       mountPad(p, f);
     } else mountInput(p, f);
-    setTbh();
+    setPnh(); placePanel();
     setTimeout(() => reveal(p, f), 60);
   }
   $('#emode').onclick = e => {
@@ -776,16 +793,26 @@ function viewDoc(site, focusSheet) {
   }
   function closeEdit() {
     commitEdit();
-    tb.classList.remove('editing'); setTbh();
+    document.body.classList.remove('editing');
+    panel.style.transform = '';
     pages.forEach(q => { q.page.querySelector('.act').style.display = 'none'; });
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   }
+  // 고른 칸이 위 막대와 아래 판 사이에 보이게 화면을 옮긴다 (폰에서는 좌우로도)
   function reveal(p, f) {
-    const pr = p.page.getBoundingClientRect(), k = pr.width / p.m.w;
+    const sc = p.page.parentElement, k = p.page.getBoundingClientRect().width / p.m.w;
+    if (sc.scrollWidth > sc.clientWidth + 1) {
+      const l = f.r[0] * k, r = f.r[2] * k, view = sc.clientWidth;
+      if (l < sc.scrollLeft + 8 || r > sc.scrollLeft + view - 8) {
+        sc.scrollLeft = Math.max(0, r - l > view - 32 ? l - 16 : (l + r) / 2 - view / 2);
+      }
+    }
+    const pr = p.page.getBoundingClientRect();
     const top = pr.top + f.r[1] * k, bot = pr.top + f.r[3] * k;
-    const vh = window.visualViewport ? window.visualViewport.height : innerHeight, minY = tb.offsetHeight + 16;
+    const minY = tb.offsetHeight + 12;
+    const maxY = (document.body.classList.contains('editing') ? panel.getBoundingClientRect().top : innerHeight) - 12;
     if (top < minY) scrollBy(0, top - minY);
-    else if (bot > vh - 16) scrollBy(0, bot - (vh - 16) + Math.min(80, vh / 4));
+    else if (bot > maxY) scrollBy(0, bot - maxY + Math.min(60, Math.max(0, (maxY - minY) / 4)));
   }
   function move(step) {
     const { p, f } = active, n = p.m.inputs[p.m.inputs.indexOf(f) + step];
