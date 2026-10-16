@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e8ebe6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="수검자서식">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>태양광 수검자 서식</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" defer></script>
+<style>
+  /* 안전조회 앱과 같은 모양: 세이지 배경, 흰 카드, 라임 주 버튼 */
+  :root {
+    --ink:#0e0f0c; --body:#454745; --mute:#868685;
+    --canvas:#ffffff; --sage:#e8ebe6; --tint:#f1f3ef; --line:#d6dad3; --line-soft:#eceee9;
+    --primary:#9fe870; --primary-active:#cdffad; --primary-pale:#e2f6d5; --pos-deep:#054d28;
+    --warn:#ffd11a; --warn-text:#4a3b1c; --neg:#d03238; --focus:#2f6fed;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--sage); color:var(--ink); font:16px/1.5 "Pretendard Variable",Pretendard,-apple-system,"Malgun Gothic",sans-serif; word-break:keep-all; overflow-wrap:anywhere; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  h1, h2, p { margin:0; }
+  main { padding:calc(20px + env(safe-area-inset-top)) 16px 40px; max-width:720px; margin:0 auto; }
+  .page-title { font-size:30px; font-weight:900; letter-spacing:-.6px; line-height:1.15; margin:8px 0 4px; }
+  .page-sub { color:var(--body); font-size:14px; margin-bottom:20px; }
+  .card { background:var(--canvas); border-radius:24px; padding:20px; margin-bottom:12px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:48px; padding:12px 24px; border-radius:24px; border:0; background:var(--primary); color:var(--ink); font-size:16px; font-weight:600; line-height:1.4; cursor:pointer; white-space:nowrap; }
+  .btn:active { background:var(--primary-active); }
+  .btn.ter { background:var(--canvas); box-shadow:inset 0 0 0 1px var(--ink); }
+  .btn.danger { background:var(--canvas); color:var(--neg); box-shadow:inset 0 0 0 1px var(--neg); }
+  .btn.full { width:100%; }
+  .btn.lg { min-height:56px; font-size:17px; }
+  .btn:disabled { opacity:.5; }
+  .row { display:flex; gap:8px; align-items:center; }
+  .grow { flex:1; min-width:0; }
+  .badge { display:inline-block; font-size:12px; font-weight:600; padding:3px 10px; border-radius:9999px; background:var(--tint); color:var(--body); white-space:nowrap; }
+  .badge.ok { background:var(--primary-pale); color:var(--pos-deep); }
+  .empty { color:var(--mute); font-size:14px; padding:8px 0; }
+  label.f { display:block; font-size:14px; font-weight:600; margin:16px 0 6px; }
+  input[type=text], select { width:100%; min-height:48px; padding:11px 14px; font-size:16px; border:1px solid var(--ink); border-radius:12px; background:var(--canvas); outline:none; -webkit-appearance:none; appearance:none; }
+  .seg { display:flex; gap:6px; padding:4px; background:var(--tint); border-radius:24px; }
+  .seg button { flex:1; min-height:42px; border-radius:20px; border:0; background:none; color:var(--body); font-size:15px; font-weight:600; }
+  .seg button.on { background:var(--canvas); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+
+  /* 목록 */
+  .item { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--line-soft); }
+  .item:last-child { border-bottom:0; }
+  .item .t { font-size:16px; font-weight:700; }
+  .item .s { font-size:13px; color:var(--body); }
+  .item.link { cursor:pointer; }
+  .icon-btn { flex:none; width:40px; height:40px; border-radius:9999px; border:0; background:var(--tint); color:var(--body); display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; font-size:13px; font-weight:700; }
+  .icon-btn svg { width:18px; height:18px; }
+  .back { display:inline-flex; align-items:center; gap:4px; border:0; background:none; padding:8px 0; color:var(--body); font-size:15px; font-weight:600; cursor:pointer; }
+  .back svg { width:18px; height:18px; }
+  .note { font-size:13px; color:var(--body); line-height:1.6; }
+
+  /* 바텀시트 */
+  .sheet-bg { position:fixed; inset:0; background:rgba(14,15,12,.4); z-index:20; display:flex; align-items:flex-end; justify-content:center; }
+  .sheet { background:var(--canvas); width:100%; max-width:640px; max-height:88vh; overflow:auto; border-radius:24px 24px 0 0; padding:20px 20px calc(20px + env(safe-area-inset-bottom)); }
+  .sheet h2 { font-size:20px; font-weight:800; margin-bottom:4px; }
+  .pick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .pick button { text-align:left; min-height:52px; padding:10px 14px; border-radius:14px; border:0; background:var(--tint); font-size:14px; font-weight:600; line-height:1.3; cursor:pointer; }
+  .pick button small { display:block; font-weight:500; color:var(--body); font-size:12px; }
+
+  /* 서식 화면 */
+  body.ed { background:#cfd3cc; }
+  .tb { position:fixed; top:0; left:0; right:0; z-index:10; background:var(--canvas); box-shadow:0 1px 0 var(--line); padding:calc(6px + env(safe-area-inset-top)) 8px 6px; }
+  .tb .row { gap:6px; }
+  .tb .ttl { font-weight:800; font-size:15px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tb .ttl small { display:block; font-weight:500; font-size:12px; color:var(--body); }
+  .tool { flex:none; min-width:44px; height:44px; padding:0 10px; border-radius:12px; border:0; background:var(--tint); color:var(--ink); font-size:14px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; }
+  .tool svg { width:20px; height:20px; }
+  .tool.on { background:var(--ink); color:#fff; }
+  .tool.pri { background:var(--primary); }
+  .tool:disabled { opacity:.35; }
+  .ebar { display:none; }
+  .tb.editing .tools { display:none; }
+  .tb.editing .ebar { display:block; }
+  .ebar .lab { font-size:12px; font-weight:600; color:var(--body); margin:0 2px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ebar input, .ebar textarea { flex:1; min-width:0; min-height:44px; padding:8px 12px; font-size:18px; border:2px solid var(--focus); border-radius:12px; outline:none; background:var(--canvas); }
+  .ebar textarea { resize:none; height:72px; font-size:16px; line-height:1.35; }
+  .pagewrap { padding:calc(var(--tbh, 60px) + 10px) 6px 40px; }
+  .page { position:relative; margin:0 auto; max-width:1000px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.15); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .page.fd { touch-action:none; }
+  .page img, .page canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .page img { pointer-events:none; }
+  .page canvas { pointer-events:none; }
+  .hits { position:absolute; inset:0; }
+  .hit { position:absolute; cursor:pointer; }
+  .hit:hover { background:rgba(47,111,237,.08); }
+  .act { position:absolute; border:2px solid var(--focus); border-radius:2px; background:rgba(47,111,237,.1); pointer-events:none; display:none; }
+  .hint { max-width:1000px; margin:10px auto 0; font-size:13px; color:var(--body); text-align:center; }
+  .busy { position:fixed; inset:0; z-index:30; background:rgba(14,15,12,.45); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:17px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"></div>
+<script>
+'use strict';
+// ---------- 오프라인 지원 ----------
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js');
+
+// ---------- 저장소 (IndexedDB: 현장마다 펜 필기가 많아서 localStorage 대신) ----------
+const dbp = new Promise((res, rej) => {
+  const r = indexedDB.open('suggeom', 1);
+  r.onupgradeneeded = () => ['sites', 'meta'].forEach(s => r.result.createObjectStore(s, { keyPath: 'id' }));
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+function tx(store, mode, fn) {
+  return dbp.then(d => new Promise((res, rej) => {
+    const t = d.transaction(store, mode), req = fn(t.objectStore(store));
+    t.oncomplete = () => res(req.result);
+    t.onerror = () => rej(t.error);
+  }));
+}
+const getAll = s => tx(s, 'readonly', st => st.getAll());
+const get = (s, id) => tx(s, 'readonly', st => st.get(id));
+const put = (s, v) => tx(s, 'readwrite', st => st.put(v));
+const del = (s, id) => tx(s, 'readwrite', st => st.delete(id));
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const stamp = iso => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+const $ = s => document.querySelector(s);
+const app = $('#app'), modal = $('#modal');
+const I = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></svg>',
+  erase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20h12"/><path d="M4 16l9-9 5 5-8 8H8z"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg>',
+  hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5a1.5 1.5 0 013 0v6m0-1V4a1.5 1.5 0 013 0v6m0-1V6a1.5 1.5 0 013 0v8a7 7 0 01-7 7h-1a6 6 0 01-5-3l-2.5-4a1.5 1.5 0 012.5-1.6L8 13"/></svg>',
+  prev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+};
+
+// ---------- 서식 정보 (tools/build.py 가 공식 서식 PDF에서 뽑은 칸 좌표) ----------
+let META = [];
+const TPL = {};
+async function loadMeta() {
+  META = await (await fetch('fields.json')).json();
+  META.forEach((m, i) => {
+    m.order = i;
+    m.byId = {};
+    m.fields.forEach(f => { m.byId[f.id] = f; });
+    m.inputs = m.fields.filter(f => f.t !== 'check');
+    m.hasPair = m.fields.some(f => f.ex);
+  });
+  META.forEach(m => { TPL[m.tpl] = m; });
+}
+// 검사 종류별 기본 서식 (공식 서식 2·3쪽 목록 기준)
+const BASIC = { '사용전': ['p04', 'p05', 'p07', 'p08', 'p09', 'p10'], '정기': ['p04', 'p05', 'p07', 'p09', 'p11'] };
+const HIGH = ['p14', 'p15', 'p16', 'p17', 'p18', 'p19', 'p20'];
+const NUMERIC = /(\[|\()\s*(V|A|W|Ω|㏁|MΩ|kW|㎾|kA|%|℃|Hz|㎐|S|s|sec|Sec|W\/㎡|kV|㎃|mA|㎂|kVA)\s*(\]|\))|저항|전압|전류|온도|일사량|번호$|수량|직렬/;
+
+// ---------- 글자·체크·필기 그리기 (화면과 PDF가 같은 함수를 쓴다) ----------
+const FONT = '-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif';
+const INK = '#111111';
+function wrapLines(ctx, text, w) {
+  const out = [];
+  for (const para of String(text).split('\n')) {
+    let line = '';
+    for (const ch of para) {
+      if (line && ctx.measureText(line + ch).width > w) { out.push(line); line = ch; } else line += ch;
+    }
+    out.push(line);
+  }
+  return out;
+}
+// 칸 크기에 맞춰 글자 크기를 줄인다. 반환값은 px(= pt × scale)
+function fit(ctx, f, text, scale) {
+  const [x0, y0, x1, y1] = f.r, w = (x1 - x0 - 2) * scale, h = (y1 - y0 - 1) * scale;
+  const multi = f.t === 'area';
+  let size = Math.min(multi ? 9 : (y1 - y0) * 0.72, 10.5) * scale;
+  for (; size >= 3.5 * scale; size -= 0.25 * scale) {
+    ctx.font = `${size}px ${FONT}`;
+    if (!multi) { if (ctx.measureText(text).width <= w) return { size, lines: [text] }; continue; }
+    const lines = wrapLines(ctx, text, w);
+    if (lines.length * size * 1.25 <= h) return { size, lines };
+  }
+  ctx.font = `${size}px ${FONT}`;
+  return { size, lines: multi ? wrapLines(ctx, text, w) : [text] };
+}
+function drawSheet(ctx, sh, scale, screen) {
+  const m = TPL[sh.tpl];
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.textBaseline = 'middle';
+  for (const f of m.fields) {
+    const v = sh.v[f.id];
+    if (f.t === 'check') {
+      if (v) { ctx.fillStyle = INK; const [a, b, c, d] = f.sq; ctx.fillRect(a * scale, b * scale, (c - a) * scale, (d - b) * scale); }
+      continue;
+    }
+    let text = v, color = INK;
+    if (!text) { if (!screen || !f.ph) continue; text = f.ph; color = '#c2c2c2'; }
+    const { size, lines } = fit(ctx, f, text, scale);
+    ctx.fillStyle = color;
+    const [x0, y0, x1, y1] = f.r;
+    if (f.t === 'area') {
+      ctx.textAlign = 'left';
+      lines.forEach((ln, i) => ctx.fillText(ln, (x0 + 1) * scale, (y0 + 1) * scale + size * (0.65 + i * 1.25)));
+    } else {
+      const wide = x1 - x0 > 70;
+      ctx.textAlign = f.unit ? 'right' : wide ? 'left' : 'center';
+      const x = f.unit ? (x1 - 1) * scale : wide ? (x0 + 1.5) * scale : (x0 + x1) / 2 * scale;
+      ctx.fillText(lines[0], x, (y0 + y1) / 2 * scale + size * 0.05);
+    }
+  }
+  ctx.strokeStyle = INK; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const s of sh.ink) strokePath(ctx, s, scale);
+}
+function strokePath(ctx, s, scale) {
+  const p = s.p;
+  ctx.lineWidth = s.w * scale;
+  ctx.beginPath();
+  ctx.moveTo(p[0] * scale, p[1] * scale);
+  if (p.length === 2) ctx.lineTo(p[0] * scale + 0.01, p[1] * scale);
+  for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * scale, p[i + 1] * scale);
+  ctx.stroke();
+}
+
+// ---------- 현장 데이터 ----------
+const sheetName = (site, sh) => {
+  const same = site.sheets.filter(x => x.tpl === sh.tpl);
+  return TPL[sh.tpl].short + (same.length > 1 ? ` #${same.indexOf(sh) + 1}` : '');
+};
+const sortSheets = site => site.sheets.sort((a, b) => TPL[a.tpl].order - TPL[b.tpl].order);
+const filled = sh => Object.keys(sh.v).length;
+
+async function getTags() { return ((await get('meta', 'tags')) || { id: 'tags', v: {} }).v; }
+// 새 장: 기본값, 사업장명(현장 이름), 날짜(오늘), 지난번에 적은 작성자·서명줄
+async function newSheet(site, tpl, from) {
+  const m = TPL[tpl], tags = await getTags(), [y, mo, d] = today().split('-');
+  const sh = { id: uid(), tpl, v: from ? { ...from.v } : {}, ink: [] };
+  if (!from) for (const f of m.fields) {
+    let v = f.default || '';
+    if (f.tag === 'site.name') v = site.name;
+    else if (f.tag === 'date.년') v = y;
+    else if (f.tag === 'date.월') v = String(+mo);
+    else if (f.tag === 'date.일') v = String(+d);
+    else if (f.tag && tags[f.tag]) v = tags[f.tag];
+    if (v) sh.v[f.id] = v;
+  }
+  return sh;
+}
+let saveTimer, saving = null;
+function saveSite(site, now) {
+  site.updatedAt = new Date().toISOString();
+  clearTimeout(saveTimer);
+  const go = () => { saving = put('sites', site); return saving; };
+  if (now) return go();
+  saveTimer = setTimeout(go, 400);
+}
+let curSite = null;
+addEventListener('visibilitychange', () => { if (document.hidden && curSite) { clearTimeout(saveTimer); put('sites', curSite); } });
+
+// ---------- 화면 이동 (#/ , #/s/현장 , #/s/현장/장) ----------
+addEventListener('hashchange', route);
+async function route() {
+  const [, , sid, shid] = location.hash.split('/');
+  modal.innerHTML = '';
+  if (curSite) { clearTimeout(saveTimer); await put('sites', curSite); }
+  document.body.classList.remove('ed');
+  if (!sid) return viewHome();
+  const site = await get('sites', sid);
+  if (!site) { location.hash = '#/'; return; }
+  curSite = site;
+  if (!shid) return viewSite(site);
+  const sh = site.sheets.find(x => x.id === shid);
+  if (!sh) { location.hash = `#/s/${sid}`; return; }
+  viewSheet(site, sh);
+}
+
+// ---------- 첫 화면: 현장 목록 ----------
+async function viewHome() {
+  curSite = null;
+  const sites = (await getAll('sites')).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  app.innerHTML = `<main>
+    <h1 class="page-title">수검자 서식</h1>
+    <p class="page-sub">한국전기안전공사 태양광발전설비 사용전·정기검사 수검자 준비자료</p>
+    <button class="btn lg full" id="add">+ 새 현장</button>
+    <div class="card" style="margin-top:16px">
+      ${sites.length ? sites.map(s => `<div class="item link" data-id="${s.id}">
+          <div class="grow"><div class="t">${esc(s.name)}</div>
+          <div class="s">${s.kind}검사 · ${s.volt} · ${s.sheets.length}장 · ${stamp(s.updatedAt)}</div></div>
+          <span class="badge">${s.kind}</span></div>`).join('')
+        : '<p class="empty">아직 현장이 없어요. "새 현장"을 눌러 시작하세요.</p>'}
+    </div>
+    <div class="card">
+      <p class="note">적은 내용은 이 패드 안에만 저장돼요. 패드를 바꾸거나 초기화하면 사라지니, 가끔 백업 파일을 만들어 카톡·드라이브에 보관해 두세요.</p>
+      <div class="row" style="margin-top:12px; flex-wrap:wrap">
+        <button class="btn ter" id="bk">백업 파일 만들기</button>
+        <label class="btn ter">백업 불러오기<input type="file" id="rs" accept=".txt,.json,text/plain,application/json" hidden></label>
+      </div>
+      <div id="bkout" class="row" style="margin-top:8px; flex-wrap:wrap"></div>
+    </div>
+    <p class="note" style="text-align:center">서식 출처: 한국전기안전공사 서식자료실 (2026.01.05 개정)</p>
+  </main>`;
+  app.querySelectorAll('.item[data-id]').forEach(el => el.onclick = () => { location.hash = `#/s/${el.dataset.id}`; });
+  $('#add').onclick = () => newSiteSheet(sites);
+  $('#bk').onclick = async () => {
+    const data = { app: 'suggeom', version: 1, exportedAt: new Date().toISOString(), sites: await getAll('sites'), tags: await getTags() };
+    offerFile($('#bkout'), new File([JSON.stringify(data)], `수검자서식_백업_${today()}.txt`, { type: 'text/plain' }));
+  };
+  $('#rs').onchange = e => restore(e.target.files[0]);
+}
+
+async function restore(file) {
+  if (!file) return;
+  let d;
+  try { d = JSON.parse(await file.text()); } catch (e) { d = null; }
+  if (!d || d.app !== 'suggeom' || !Array.isArray(d.sites)) return alert('수검자 서식 백업 파일이 아니에요.');
+  if (!confirm(`백업 파일의 현장 ${d.sites.length}곳을 불러올까요? 같은 현장은 백업 내용으로 덮어씁니다.`)) return;
+  for (const s of d.sites) await put('sites', s);
+  if (d.tags) await put('meta', { id: 'tags', v: { ...(await getTags()), ...d.tags } });
+  alert(`불러오기 완료: 현장 ${d.sites.length}곳`);
+  viewHome();
+}
+
+// 공유는 사용자가 직접 누른 직후에만 허용되므로, 파일을 만든 뒤 버튼을 한 번 더 누르게 한다
+function offerFile(host, file) {
+  const canShare = navigator.canShare && navigator.canShare({ files: [file] });
+  host.innerHTML = `${canShare ? '<button class="btn" data-share>공유하기 (카톡·드라이브)</button>' : ''}
+    <button class="btn ${canShare ? 'ter' : ''}" data-save>기기에 저장</button>`;
+  const save = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file); a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  };
+  if (canShare) host.querySelector('[data-share]').onclick = async () => {
+    try { await navigator.share({ files: [file] }); }
+    catch (e) {
+      if (e.name === 'AbortError') return;
+      alert(`바로 공유가 안 돼서 대신 기기에 저장할게요. (${e.name})`);
+      save();
+    }
+  };
+  host.querySelector('[data-save]').onclick = save;
+}
+
+function sheetModal(html) {
+  modal.innerHTML = `<div class="sheet-bg"><div class="sheet">${html}</div></div>`;
+  modal.querySelector('.sheet-bg').onclick = e => { if (e.target.classList.contains('sheet-bg')) modal.innerHTML = ''; };
+}
+function segInit(root) {
+  root.querySelectorAll('.seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  }));
+}
+const segVal = el => el.querySelector('button.on').dataset.v;
+
+function newSiteSheet(sites) {
+  sheetModal(`<h2>새 현장</h2>
+    <label class="f" for="nm">현장 이름 (사업장명)</label>
+    <input type="text" id="nm" placeholder="예: ○○태양광발전소">
+    <label class="f">검사 종류</label>
+    <div class="seg" id="kind"><button class="on" data-v="사용전">사용전검사</button><button data-v="정기">정기검사</button></div>
+    <label class="f">한전 계통 연계</label>
+    <div class="seg" id="volt"><button class="on" data-v="저압">저압 이하</button><button data-v="고압">고압 이상 (특고압 서식 추가)</button></div>
+    ${sites.length ? `<label class="f" for="from">이전 현장 내용 가져오기 (선택)</label>
+      <select id="from"><option value="">새로 시작</option>${sites.map(s => `<option value="${s.id}">${esc(s.name)} (${s.kind})</option>`).join('')}</select>
+      <p class="note" style="margin-top:6px">모듈·인버터 사양처럼 같은 내용을 그대로 가져와요. 펜 필기·서명은 가져오지 않아요.</p>` : ''}
+    <button class="btn lg full" id="mk" style="margin-top:20px">만들기</button>`);
+  segInit(modal);
+  $('#mk').onclick = async () => {
+    const name = $('#nm').value.trim();
+    if (!name) return $('#nm').focus();
+    const site = { id: uid(), name, kind: segVal($('#kind')), volt: segVal($('#volt')), createdAt: new Date().toISOString(), sheets: [] };
+    const src = $('#from') && $('#from').value ? sites.find(s => s.id === $('#from').value) : null;
+    if (src) {
+      for (const sh of src.sheets) site.sheets.push({ id: uid(), tpl: sh.tpl, v: { ...sh.v }, ink: [] });
+      for (const sh of site.sheets) for (const f of TPL[sh.tpl].fields) if (f.tag === 'site.name') sh.v[f.id] = name;
+    } else {
+      for (const t of [...BASIC[site.kind], ...(site.volt === '고압' ? HIGH : [])]) site.sheets.push(await newSheet(site, t));
+    }
+    sortSheets(site);
+    await saveSite(site, true);
+    location.hash = `#/s/${site.id}`;
+  };
+  setTimeout(() => $('#nm').focus(), 50);
+}
+
+// ---------- 현장 화면: 장 목록 ----------
+function viewSite(site) {
+  sortSheets(site);
+  app.innerHTML = `<main>
+    <button class="back" id="bk">${I.back}현장 목록</button>
+    <div class="row"><h1 class="page-title grow" id="ttl">${esc(site.name)}</h1></div>
+    <p class="page-sub">${site.kind}검사 · ${site.volt} · 서식 ${site.sheets.length}장</p>
+    <div class="card">
+      ${site.sheets.map(sh => `<div class="item" data-id="${sh.id}">
+        <div class="grow link" data-open style="cursor:pointer"><div class="t">${esc(sheetName(site, sh))}</div>
+        <div class="s">${esc(TPL[sh.tpl].title)}</div>
+        <div class="s">${filled(sh) ? `${filled(sh)}칸 입력` : '아직 비어 있음'}${sh.ink.length ? ' · 펜 필기 있음' : ''}</div></div>
+        <button class="icon-btn" data-copy aria-label="한 장 더">${I.copy}</button>
+        <button class="icon-btn" data-del aria-label="삭제">${I.trash}</button></div>`).join('') || '<p class="empty">서식이 없어요.</p>'}
+      <button class="btn ter full" id="addsh" style="margin-top:12px">+ 서식 추가</button>
+    </div>
+    <button class="btn lg full" id="pdf">PDF 만들기 (${site.sheets.length}장)</button>
+    <div id="pdfout" class="row" style="margin-top:8px; flex-wrap:wrap"></div>
+    <div class="card" style="margin-top:16px">
+      <p class="note">완성한 PDF는 전기안전여기로(safety.kesco.or.kr) 검사 신청 때 첨부파일의 "시험성적서" 칸에 올리면 돼요.
+      인버터는 대수만큼, 모듈 기록표는 접속함(없으면 인버터) 수만큼 장을 늘려 주세요 (복사 버튼).</p>
+      <div class="row" style="margin-top:12px; flex-wrap:wrap">
+        <button class="btn ter" id="ren">이름 바꾸기</button>
+        <button class="btn danger" id="rm">현장 삭제</button>
+      </div>
+    </div>
+  </main>`;
+  $('#bk').onclick = () => { location.hash = '#/'; };
+  app.querySelectorAll('.item[data-id]').forEach(el => {
+    const sh = site.sheets.find(x => x.id === el.dataset.id);
+    el.querySelector('[data-open]').onclick = () => { location.hash = `#/s/${site.id}/${sh.id}`; };
+    el.querySelector('[data-copy]').onclick = async () => {
+      const keep = confirm(`"${sheetName(site, sh)}"을 한 장 더 만들어요.\n\n확인: 적은 내용까지 복사 (같은 사양의 인버터 등)\n취소: 빈 서식으로 추가`);
+      site.sheets.push(await newSheet(site, sh.tpl, keep ? sh : null));
+      await saveSite(site, true); viewSite(site);
+    };
+    el.querySelector('[data-del]').onclick = async () => {
+      if (!confirm(`"${sheetName(site, sh)}"을 지울까요? 적은 내용도 함께 지워져요.`)) return;
+      site.sheets = site.sheets.filter(x => x !== sh);
+      await saveSite(site, true); viewSite(site);
+    };
+  });
+  $('#addsh').onclick = () => {
+    sheetModal(`<h2>서식 추가</h2><p class="note">공식 서식 16종 중에서 고르세요.</p>
+      <div class="pick">${META.map(m => `<button data-t="${m.tpl}">${esc(m.short)}<small>${esc(m.title)}</small></button>`).join('')}</div>`);
+    modal.querySelectorAll('[data-t]').forEach(b => b.onclick = async () => {
+      site.sheets.push(await newSheet(site, b.dataset.t));
+      await saveSite(site, true); modal.innerHTML = ''; viewSite(site);
+    });
+  };
+  $('#pdf').onclick = () => makePdf(site);
+  $('#ren').onclick = async () => {
+    const n = prompt('현장 이름', site.name);
+    if (!n || !n.trim()) return;
+    site.name = n.trim(); await saveSite(site, true); viewSite(site);
+  };
+  $('#rm').onclick = async () => {
+    if (!confirm(`"${site.name}" 현장을 지울까요? 서식 ${site.sheets.length}장이 모두 지워지고 되돌릴 수 없어요.`)) return;
+    await del('sites', site.id); curSite = null; location.hash = '#/';
+  };
+}
+
+// ---------- PDF: 빈 공식 서식(template.pdf) 위에 적은 내용을 그림으로 겹친다 ----------
+async function makePdf(site) {
+  const busy = document.createElement('div');
+  busy.className = 'busy'; busy.textContent = 'PDF 만드는 중…';
+  document.body.appendChild(busy);
+  try {
+    if (!window.PDFLib) throw new Error('PDF 도구를 아직 못 불러왔어요. 인터넷에 연결된 상태로 앱을 한 번 열어 주세요.');
+    const { PDFDocument } = PDFLib;
+    const tpl = await PDFDocument.load(await (await fetch('template.pdf')).arrayBuffer());
+    const doc = await PDFDocument.create();
+    doc.setTitle(`${site.name} 수검자 준비자료`);
+    const S = 3, cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    for (const sh of sortSheets(site)) {
+      const m = TPL[sh.tpl];
+      const [pg] = await doc.copyPages(tpl, [m.page]);
+      doc.addPage(pg);
+      if (!filled(sh) && !sh.ink.length) continue;
+      cv.width = Math.round(m.w * S); cv.height = Math.round(m.h * S);
+      drawSheet(ctx, sh, S, false);
+      const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+      const img = await doc.embedPng(await blob.arrayBuffer());
+      pg.drawImage(img, { x: 0, y: 0, width: m.w, height: m.h });
+    }
+    const bytes = await doc.save();
+    const name = `${site.name.replace(/[\\/:*?"<>|]/g, '')}_수검자서식_${today()}.pdf`;
+    offerFile($('#pdfout'), new File([bytes], name, { type: 'application/pdf' }));
+  } catch (e) {
+    alert(e.message || String(e));
+  } finally {
+    busy.remove();
+  }
+}
+
+// ---------- 서식 한 장 채우기 ----------
+// 펜(애플펜슬·S펜)으로 그으면 필기, 펜으로 콕 찍거나 손가락으로 누르면 칸 입력·체크.
+// 펜이 없으면 "손가락 쓰기"를 켜서 손가락으로 필기한다.
+let tool = 'pen', fingerDraw = false;
+try { fingerDraw = localStorage.getItem('fingerDraw') === '1'; } catch (e) { /* 저장 못 해도 동작 */ }
+
+function viewSheet(site, sh) {
+  const m = TPL[sh.tpl], list = sortSheets(site), idx = list.indexOf(sh);
+  const undo = [];
+  let active = null, editOld = null;
+  document.body.classList.add('ed');
+  app.innerHTML = `
+    <div class="tb" id="tb">
+      <div class="tools"><div class="row">
+        <button class="tool" id="bk" aria-label="목록">${I.back}</button>
+        <div class="ttl grow">${esc(sheetName(site, sh))}<small>${idx + 1} / ${list.length}장 · ${esc(site.name)}</small></div>
+        <button class="tool" id="pv" aria-label="이전 장" ${idx ? '' : 'disabled'}>${I.prev}</button>
+        <button class="tool" id="nx" aria-label="다음 장" ${idx < list.length - 1 ? '' : 'disabled'}>${I.next}</button>
+      </div><div class="row" style="margin-top:6px; overflow-x:auto">
+        <button class="tool" id="tpen">${I.pen}펜</button>
+        <button class="tool" id="ters">${I.erase}지우개</button>
+        <button class="tool" id="tund" disabled>${I.undo}되돌리기</button>
+        <button class="tool" id="tfd">${I.hand}손가락 쓰기</button>
+        ${m.hasPair ? '<button class="tool pri" id="tok">빈 칸 모두 양호</button>' : ''}
+      </div></div>
+      <div class="ebar">
+        <div class="lab" id="elab"></div>
+        <div class="row">
+          <span id="ewrap" class="grow row"></span>
+          <button class="tool" id="ekb" aria-label="키보드 바꾸기">123</button>
+          <button class="tool" id="eup" aria-label="이전 칸">${I.prev}</button>
+          <button class="tool" id="edn" aria-label="아래 칸">${I.down}</button>
+          <button class="tool" id="enx" aria-label="다음 칸">${I.next}</button>
+          <button class="tool pri" id="eok">완료</button>
+        </div>
+      </div>
+    </div>
+    <div class="pagewrap">
+      <div class="page" id="pg" style="aspect-ratio:${m.w}/${m.h}">
+        <img src="bg/${m.tpl}.png" alt="">
+        <canvas id="cv"></canvas>
+        <div class="hits" id="hits">${m.fields.map(f => {
+          const r = f.t === 'check' ? f.hit : f.r;
+          return `<div class="hit" data-f="${f.id}" style="left:${r[0] / m.w * 100}%;top:${r[1] / m.h * 100}%;width:${(r[2] - r[0]) / m.w * 100}%;height:${(r[3] - r[1]) / m.h * 100}%"></div>`;
+        }).join('')}</div>
+        <div class="act" id="act"></div>
+      </div>
+      <p class="hint" id="hint"></p>
+    </div>`;
+  const tb = $('#tb'), pg = $('#pg'), cv = $('#cv'), ctx = cv.getContext('2d');
+  const setTbh = () => document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px');
+  setTbh();
+
+  // 화면 캔버스 크기 = 화면 크기 × 기기 배율
+  let scale = 1;
+  const redraw = () => drawSheet(ctx, sh, scale, true);
+  const resize = () => {
+    const dpr = window.devicePixelRatio || 1, w = pg.clientWidth;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * m.h / m.w * dpr);
+    scale = cv.width / m.w;
+    redraw(); setTbh();
+  };
+  new ResizeObserver(resize).observe(pg);
+
+  const tags = getTags();
+  async function setVal(f, val, batch) {
+    const old = sh.v[f.id];
+    if ((old || '') === (val || '')) return;
+    if (val) sh.v[f.id] = val; else delete sh.v[f.id];
+    if (batch) batch.push({ id: f.id, old }); else pushUndo({ k: 'v', items: [{ id: f.id, old }] });
+    if (f.tag && f.t !== 'check' && !f.tag.startsWith('date.') && !f.tag.startsWith('site.')) {
+      const t = await tags; t[f.tag] = val; put('meta', { id: 'tags', v: t });
+    }
+    saveSite(site);
+  }
+  function pushUndo(u) { undo.push(u); $('#tund').disabled = false; }
+  $('#tund').onclick = () => {
+    const u = undo.pop();
+    if (!u) return;
+    if (u.k === 'v') for (const it of u.items.reverse()) { if (it.old) sh.v[it.id] = it.old; else delete sh.v[it.id]; }
+    if (u.k === 'ink+') sh.ink = sh.ink.filter(s => s !== u.s);
+    if (u.k === 'ink-') for (const it of u.items.reverse()) sh.ink.splice(it.i, 0, it.s);
+    $('#tund').disabled = !undo.length;
+    saveSite(site); redraw();
+    if (active) $('#ein').value = sh.v[active.id] || '';
+  };
+
+  function toggle(f) {
+    const on = !sh.v[f.id], batch = [];
+    if (on && f.ex) for (const g of m.fields) if (g.grp === f.grp && g !== f) setVal(g, false, batch);
+    setVal(f, on, batch);
+    pushUndo({ k: 'v', items: batch });
+    redraw();
+  }
+  function tapField(f) {
+    if (f.t === 'check') { closeEdit(); toggle(f); } else openEdit(f);
+  }
+  let suppress = 0;
+  $('#hits').addEventListener('click', e => {
+    const el = e.target.closest('.hit');
+    if (!el || Date.now() < suppress) return;
+    tapField(m.byId[el.dataset.f]);
+  });
+
+  // 칸 입력 막대 (화면 위쪽에 고정: 키보드에 가리지 않게)
+  function openEdit(f) {
+    commitEdit();
+    active = f; editOld = sh.v[f.id];
+    const multi = f.t === 'area';
+    $('#ewrap').innerHTML = multi ? '<textarea id="ein"></textarea>' : '<input id="ein" type="text" autocomplete="off" enterkeyhint="next">';
+    const ein = $('#ein');
+    ein.value = sh.v[f.id] || '';
+    ein.placeholder = f.ph ? `예: ${f.ph}` : '';
+    const numeric = !multi && (f.date || f.unit || NUMERIC.test(f.label || ''));
+    ein.inputMode = numeric ? 'decimal' : 'text';
+    $('#ekb').textContent = numeric ? '가' : '123';
+    $('#elab').textContent = (f.label || '입력') + (f.unit ? ` ${f.unit}` : '');
+    ein.oninput = () => {
+      if (ein.value) sh.v[f.id] = ein.value; else delete sh.v[f.id];
+      redraw(); saveSite(site);
+    };
+    ein.onkeydown = e => { if (e.key === 'Enter' && !multi) { e.preventDefault(); move(1); } };
+    tb.classList.add('editing'); setTbh();
+    const a = $('#act'), r = f.r;
+    Object.assign(a.style, { display: 'block', left: r[0] / m.w * 100 + '%', top: r[1] / m.h * 100 + '%', width: (r[2] - r[0]) / m.w * 100 + '%', height: (r[3] - r[1]) / m.h * 100 + '%' });
+    ein.focus({ preventScroll: true });
+    setTimeout(() => reveal(f), 60);
+  }
+  // 입력을 마칠 때 바뀐 값을 되돌리기 목록과 자동 채움 값에 남긴다
+  function commitEdit() {
+    if (!active) return;
+    const f = active, now = sh.v[f.id];
+    if ((now || '') !== (editOld || '')) {
+      sh.v[f.id] = editOld; if (!editOld) delete sh.v[f.id];
+      setVal(f, now || '');
+    }
+    active = null;
+  }
+  function closeEdit() {
+    commitEdit();
+    tb.classList.remove('editing'); setTbh();
+    $('#act').style.display = 'none';
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
+  function reveal(f) {
+    const pr = pg.getBoundingClientRect(), k = pr.width / m.w;
+    const top = pr.top + f.r[1] * k, bot = pr.top + f.r[3] * k;
+    const vh = window.visualViewport ? window.visualViewport.height : innerHeight, minY = tb.offsetHeight + 16;
+    if (top < minY) scrollBy(0, top - minY);
+    else if (bot > vh - 16) scrollBy(0, bot - (vh - 16) + Math.min(80, vh / 4));
+  }
+  function move(step) {
+    const i = m.inputs.indexOf(active), n = m.inputs[i + step];
+    if (n) openEdit(n); else closeEdit();
+  }
+  $('#enx').onclick = () => move(1);
+  $('#eup').onclick = () => move(-1);
+  $('#edn').onclick = () => {   // 바로 아래 칸 (같은 열)
+    const f = active, cx = (f.r[0] + f.r[2]) / 2;
+    const below = m.inputs.filter(g => g.r[1] >= f.r[3] - 1 && g.r[0] - 1 <= cx && cx <= g.r[2] + 1);
+    below.sort((a, b) => a.r[1] - b.r[1]);
+    if (below[0]) openEdit(below[0]); else move(1);
+  };
+  $('#eok').onclick = closeEdit;
+  $('#ekb').onclick = () => {
+    const ein = $('#ein'), num = ein.inputMode === 'decimal';
+    ein.inputMode = num ? 'text' : 'decimal';
+    $('#ekb').textContent = num ? '123' : '가';
+    ein.blur(); ein.focus();
+  };
+
+  // 도구
+  const syncTools = () => {
+    $('#tpen').classList.toggle('on', tool === 'pen');
+    $('#ters').classList.toggle('on', tool === 'erase');
+    $('#tfd').classList.toggle('on', fingerDraw);
+    pg.classList.toggle('fd', fingerDraw);
+    $('#hint').textContent = fingerDraw
+      ? '손가락 쓰기 켜짐: 그으면 필기, 콕 누르면 칸 입력·체크예요. 화면을 위아래로 움직이려면 잠깐 끄세요.'
+      : '펜으로 쓰면 필기, 펜으로 콕 찍거나 손가락으로 누르면 칸 입력·체크예요. 펜이 없으면 "손가락 쓰기"를 켜세요.';
+  };
+  $('#tpen').onclick = () => { tool = 'pen'; syncTools(); };
+  $('#ters').onclick = () => { tool = 'erase'; syncTools(); };
+  $('#tfd').onclick = () => {
+    fingerDraw = !fingerDraw;
+    try { localStorage.setItem('fingerDraw', fingerDraw ? '1' : '0'); } catch (e) { /* 무시 */ }
+    syncTools();
+  };
+  syncTools();
+  if (m.hasPair) $('#tok').onclick = () => {   // 양호/불량 같은 묶음 중 아무것도 안 고른 줄을 첫째(양호·없음)로
+    const groups = {};
+    for (const f of m.fields) if (f.ex) (groups[f.grp] = groups[f.grp] || []).push(f);
+    const batch = [];
+    for (const g of Object.values(groups)) {
+      if (g.some(f => sh.v[f.id])) continue;
+      const first = g.slice().sort((a, b) => a.r[0] - b.r[0])[0];
+      if (['양호', '없음', '유'].includes(first.label)) setVal(first, true, batch);
+    }
+    if (!batch.length) return alert('빈 줄이 없어요.');
+    pushUndo({ k: 'v', items: batch }); redraw();
+  };
+  $('#bk').onclick = () => { closeEdit(); location.hash = `#/s/${site.id}`; };
+  $('#pv').onclick = () => { closeEdit(); location.hash = `#/s/${site.id}/${list[idx - 1].id}`; };
+  $('#nx').onclick = () => { closeEdit(); location.hash = `#/s/${site.id}/${list[idx + 1].id}`; };
+
+  // 펜 필기
+  const toPt = e => { const r = pg.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * m.w, y: (e.clientY - r.top) / r.height * m.h }; };
+  let cur = null, penDown = false;
+  const draws = e => e.pointerType === 'pen' || fingerDraw;
+  // 펜으로 쓰는 동안·직후에는 손바닥이 닿아 생긴 탭을 무시한다
+  const palm = e => { if (e.pointerType === 'pen') suppress = Math.max(suppress, Date.now() + 800); };
+  ['pointerdown', 'pointermove', 'pointerup'].forEach(t => pg.addEventListener(t, palm));
+  pg.addEventListener('pointerdown', e => {
+    if (!draws(e) || cur) return;
+    penDown = true;
+    e.preventDefault();
+    try { pg.setPointerCapture(e.pointerId); } catch (err) { /* 캡처가 안 돼도 그리기는 된다 */ }
+    const p = toPt(e);
+    cur = { id: e.pointerId, s: { w: 1.1, p: [+p.x.toFixed(1), +p.y.toFixed(1)] }, t0: Date.now(), dist: 0, last: p, erased: [] };
+    if (tool === 'erase') eraseAt(p);
+  });
+  // 펜이 닿는 동안 화면이 같이 밀리지 않게 (아이패드: 펜 터치는 touchType 'stylus')
+  pg.addEventListener('touchstart', e => {
+    if (fingerDraw || penDown || [...e.touches].some(t => t.touchType === 'stylus')) e.preventDefault();
+  }, { passive: false });
+  pg.addEventListener('pointermove', e => {
+    if (!cur || e.pointerId !== cur.id) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs.length ? evs : [e]) {
+      const p = toPt(ev), d = Math.hypot(p.x - cur.last.x, p.y - cur.last.y);
+      if (d < 0.35) continue;
+      cur.dist += d;
+      if (tool === 'erase') { eraseAt(p); cur.last = p; continue; }
+      cur.s.p.push(+p.x.toFixed(1), +p.y.toFixed(1));
+      ctx.strokeStyle = INK; ctx.lineCap = 'round'; ctx.lineWidth = cur.s.w * scale;
+      ctx.beginPath(); ctx.moveTo(cur.last.x * scale, cur.last.y * scale); ctx.lineTo(p.x * scale, p.y * scale); ctx.stroke();
+      cur.last = p;
+    }
+  });
+  const end = e => {
+    if (!cur || e.pointerId !== cur.id) return;
+    const c = cur; cur = null; penDown = false;
+    if (e.type === 'pointercancel') { redraw(); return; }
+    if (tool === 'erase') {
+      if (c.erased.length) pushUndo({ k: 'ink-', items: c.erased });
+      saveSite(site); return;
+    }
+    // 짧게 콕 찍으면 그 자리 칸을 누른 것으로
+    if (c.dist < 2.5 && Date.now() - c.t0 < 400) {
+      const p = { x: c.s.p[0], y: c.s.p[1] };
+      const inR = r => p.x >= r[0] && p.x <= r[2] && p.y >= r[1] && p.y <= r[3];
+      const hits = m.fields.filter(f => inR(f.t === 'check' ? f.hit : f.r));
+      redraw();
+      if (hits.length) {
+        hits.sort((a, b) => (a.r[2] - a.r[0]) * (a.r[3] - a.r[1]) - (b.r[2] - b.r[0]) * (b.r[3] - b.r[1]));
+        suppress = Date.now() + 500;
+        tapField(hits[0]);
+        return;
+      }
+      if (!fingerDraw) return;   // 펜 점 하나는 남기지 않는다 (손가락 쓰기면 점도 남김)
+    }
+    sh.ink.push(c.s);
+    pushUndo({ k: 'ink+', s: c.s });
+    saveSite(site);
+  };
+  pg.addEventListener('pointerup', end);
+  pg.addEventListener('pointercancel', end);
+  function eraseAt(p) {
+    const R = 5;
+    const hit = s => {
+      for (let i = 0; i < s.p.length; i += 2) if (Math.hypot(s.p[i] - p.x, s.p[i + 1] - p.y) < R) return true;
+      return false;
+    };
+    let changed = false;
+    for (let i = sh.ink.length - 1; i >= 0; i--) {
+      if (hit(sh.ink[i])) { cur.erased.push({ s: sh.ink[i], i }); sh.ink.splice(i, 1); changed = true; }
+    }
+    if (changed) redraw();
+  }
+  scrollTo(0, 0);
+}
+
+// ---------- 시작 ----------
+(async () => {
+  await loadMeta();
+  route();
+})();
+</script>
+</body>
+</html>
