@@ -273,7 +273,8 @@ function drawInk(ctx, v, f, scale) {
   const oy = area ? y0 + py : (y0 + y1 - dh) / 2;
   ctx.save();
   ctx.strokeStyle = INK; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.lineWidth = Math.max(0.45, Math.min(0.9, 2.2 * k)) * scale;
+  // 줄인 만큼 선도 가늘어지면 잘 안 보여서, 인쇄 글자 굵기(0.8pt) 밑으로는 줄이지 않는다
+  ctx.lineWidth = Math.max(0.8, Math.min(1.5, 4.2 * k)) * scale;
   for (const s of v.ink) {
     ctx.beginPath();
     for (let i = 0; i < s.length; i += 2) {
