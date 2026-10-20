@@ -53,6 +53,52 @@
   .site .t { font-size:20px; font-weight:800; }
   .site .s { font-size:14px; color:var(--body); margin-top:2px; }
   .empty { color:var(--mute); font-size:15px; padding:16px 4px; }
+  .site .badges { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .badge { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:9999px; background:var(--tint); color:var(--body); white-space:nowrap; }
+  .badge.ok { background:var(--primary-pale); color:var(--pos-deep); }
+  .badge.warn { background:#fff1b8; color:var(--warn-text); }
+  .badge.info { background:#dbe6ff; color:#1f3f9a; }
+
+  /* 홈: 제목 옆 동기화 표시 · 요약 · 검색 · 목록/달력 (안전조회 앱과 같은 모양) */
+  .title-row { display:flex; align-items:center; gap:8px; margin:8px 0 4px; }
+  .title-row .page-title { margin:0; flex:1; }
+  .bk-chip { flex:none; display:inline-flex; align-items:center; gap:6px; border:0; background:var(--canvas); color:var(--body); font-size:14px; font-weight:700; padding:9px 14px; border-radius:9999px; white-space:nowrap; cursor:pointer; }
+  .bk-chip svg { width:17px; height:17px; }
+  .bk-chip.ok { background:var(--primary-pale); color:var(--pos-deep); }
+  .bk-chip.warn { background:var(--warn); color:var(--warn-text); }
+  .spin { animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0 16px; }
+  .stat { background:var(--canvas); border-radius:18px; padding:12px 14px; }
+  .stat b { display:block; font-size:26px; font-weight:900; line-height:1.15; }
+  .stat span { font-size:13px; font-weight:600; color:var(--body); }
+  .stat.warn b { color:#a87300; }
+  .stat.ok b { color:var(--pos-deep); }
+  input.search { width:100%; min-height:48px; padding:10px 16px 10px 44px; font-size:16px; border:0; border-radius:24px; outline:none; margin-bottom:10px; -webkit-appearance:none; appearance:none; background:var(--canvas) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%23454745' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L16 16'/%3E%3C/svg%3E") no-repeat 16px center; }
+  .seg { display:flex; gap:6px; padding:4px; background:var(--canvas); border-radius:24px; margin-bottom:6px; }
+  .seg button { flex:1; min-height:42px; border-radius:20px; border:0; background:none; color:var(--body); font-size:15px; font-weight:700; cursor:pointer; }
+  .seg button.on { background:var(--ink); color:#fff; }
+  .day-h { display:flex; align-items:center; gap:8px; margin:20px 4px 0; font-size:15px; }
+  .day-h b { font-weight:800; }
+  .day-h .cnt { margin-left:auto; color:var(--body); font-size:13px; font-weight:600; }
+  .cal { background:var(--canvas); border-radius:22px; padding:14px; margin-top:8px; }
+  .cal-h { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .cal-h .grow { text-align:center; }
+  .cal-h b { font-size:19px; font-weight:800; }
+  .cal-h small { margin-left:6px; color:var(--body); font-size:14px; }
+  .cal-h .icon-btn { background:var(--tint); }
+  .cal-w, .cal-g { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; }
+  .cal-w span { font-size:13px; font-weight:600; color:var(--body); padding:4px 0; }
+  .cal-w span:first-child { color:var(--neg); }
+  .cal-g { gap:3px; }
+  .cd { border:0; background:none; height:54px; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:0; color:var(--body); cursor:pointer; }
+  .cd b { font-size:16px; font-weight:500; line-height:1.2; }
+  .cd small { font-size:11px; font-weight:700; color:var(--pos-deep); }
+  .cd.has { background:var(--primary-pale); color:var(--ink); }
+  .cd.has b { font-weight:800; }
+  .cd.today b { text-decoration:underline; text-underline-offset:3px; }
+  .cd.sel { background:var(--ink); color:var(--primary); }
+  .cd.sel small { color:var(--primary); }
 
   /* 바텀시트 */
   .sheet-bg { position:fixed; inset:0; background:rgba(14,15,12,.4); z-index:20; display:flex; align-items:flex-end; justify-content:center; }
@@ -73,6 +119,11 @@
   .tool.pri { background:var(--primary); }
   .tool[hidden] { display:none; }
   .tool.done { background:var(--primary-pale); color:var(--pos-deep); }
+  /* 서식 바로가기: 누르면 그 장으로, 스크롤하면 지금 보는 장이 까맣게 */
+  .tabs { display:flex; gap:6px; overflow-x:auto; margin:8px -10px -2px; padding:0 10px 2px; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex:none; min-height:38px; padding:0 14px; border-radius:19px; border:0; background:var(--tint); color:var(--body); font-size:14px; font-weight:700; white-space:nowrap; cursor:pointer; }
+  .tab.on { background:var(--ink); color:#fff; }
   /* 쓰는 판: 칸을 누르면 화면 아래에서 올라온다 (은행 패드 서류처럼) */
   .panel { position:fixed; left:0; right:0; bottom:0; z-index:12; display:none; background:var(--canvas); border-radius:22px 22px 0 0; box-shadow:0 -6px 24px rgba(14,15,12,.18); padding:12px 12px calc(12px + env(safe-area-inset-bottom)); }
   body.editing .panel { display:block; }
@@ -176,6 +227,8 @@ const I = {
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 00.6-7.96A6 6 0 006.2 9.1 4.5 4.5 0 007 18z"/></svg>',
+  sync: '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 11-2.3-5.6"/><path d="M20 4v5h-5"/></svg>',
 };
 
 // 패드·폰에서 공유창(카톡 등)으로 바로 보낼 수 있으면 "카톡으로 보내기", 아니면(컴퓨터) "PDF 저장"
@@ -400,10 +453,13 @@ async function api(action, extra = {}, code) {
 }
 let syncing = false, syncAgain = false, syncFailed = false, syncTimer = 0;
 // 고치는 중에는 잠시(8초) 손을 멈췄을 때 올린다
+let showTimer = 0;
 function scheduleSync() {
   if (!SYNC_URL) return;
   clearTimeout(syncTimer);
   syncTimer = setTimeout(syncDrive, 8000);
+  clearTimeout(showTimer);
+  showTimer = setTimeout(showSync, 700);   // 화면 위 "올릴 내용 있음"
 }
 async function syncDrive() {
   if (!SYNC_URL || !navigator.onLine || !(await get('meta', 'team'))) return;
@@ -457,17 +513,67 @@ async function syncDrive() {
 }
 addEventListener('online', syncDrive);
 addEventListener('visibilitychange', () => { if (!document.hidden) syncDrive(); });
-// 첫 화면의 드라이브 상태 한 줄
-async function showSync() {
-  const el = $('#syncst');
-  if (!el || !SYNC_URL) return;
+// ---------- 동기화 상태 (홈 제목 옆 표시, 현장 화면 위 한 줄). 누르면 [지금 동기화] 창 ----------
+async function syncStatus() {
   const synced = ((await get('meta', 'synced')) || { map: {} }).map, dq = ((await get('meta', 'deletedQ')) || { ids: [] }).ids;
-  const pending = (await getAll('sites')).filter(s => synced[s.id] !== s.updatedAt).length + dq.length;
-  const at = (await get('meta', 'syncAt') || {}).at;
-  el.textContent = syncing ? '드라이브와 맞추는 중…'
-    : syncFailed || (pending && !navigator.onLine) ? `드라이브에 아직 못 올린 현장 ${pending}곳 · 인터넷이 되면 올려요`
-    : pending ? `드라이브에 올릴 현장 ${pending}곳`
-    : at ? `드라이브에 저장됨 · ${stamp(at)} ${new Date(at).toTimeString().slice(0, 5)}` : '';
+  const pendingIds = (await getAll('sites')).filter(s => synced[s.id] !== s.updatedAt).map(s => s.id);
+  return { pendingIds, pending: pendingIds.length + dq.length, at: ((await get('meta', 'syncAt')) || {}).at };
+}
+const ymd = iso => new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const hm = iso => new Date(iso).toTimeString().slice(0, 5);
+function syncChipHtml(st) {
+  if (!SYNC_URL) return `<button class="bk-chip" id="syncchip">${I.cloud}백업</button>`;
+  if (syncing) return `<button class="bk-chip" id="syncchip">${I.sync}동기화 중…</button>`;
+  if (syncFailed) return `<button class="bk-chip warn" id="syncchip">${I.cloud}동기화 안 됨 · 다시 시도</button>`;
+  if (st.pending) return `<button class="bk-chip warn" id="syncchip">${I.cloud}올릴 것 ${st.pending}곳</button>`;
+  return `<button class="bk-chip ok" id="syncchip">${I.cloud}동기화됨${st.at ? ` · ${ymd(st.at) === today() ? hm(st.at) : stamp(st.at)}` : ''}</button>`;
+}
+const onSyncChip = () => (syncFailed && !syncing ? syncDrive() : syncSheet());
+async function showSync() {
+  if (!$('#syncchip') && !$('#docsync')) return;
+  const st = await syncStatus(), chip = $('#syncchip'), ds = $('#docsync');
+  if (chip) { chip.outerHTML = syncChipHtml(st); $('#syncchip').onclick = onSyncChip; }
+  if (ds && SYNC_URL) {
+    ds.textContent = ' · ' + (syncing ? '드라이브에 올리는 중…' : syncFailed ? '드라이브 연결 안 됨'
+      : curSite && st.pendingIds.includes(curSite.id) ? '드라이브에 올릴 내용 있음' : '드라이브 저장됨');
+  }
+}
+// 연동·백업 창: 지금 동기화, 백업 파일, 팀 코드 다시 입력
+async function syncSheet() {
+  const st = await syncStatus();
+  sheetModal(`<h2>${SYNC_URL ? '드라이브 연동' : '백업'}</h2>
+    <p class="note">${SYNC_URL ? '패드·폰이 구글 드라이브(수검자서식 백업 폴더)로 연결돼 있어요. 어느 기기에서 적든 다른 기기에도 보이고, 인터넷이 없으면 연결될 때 맞춰요.'
+      : '적은 내용은 이 기기 안에만 저장돼요. 기기를 바꾸거나 초기화하면 사라지니, 가끔 백업 파일을 만들어 카톡·드라이브에 보관해 두세요.'}</p>
+    ${SYNC_URL ? `<p class="note" style="margin-top:8px"><b style="color:var(--ink)">${st.at ? `마지막 동기화 ${stamp(st.at)} ${hm(st.at)}` : '아직 동기화한 적 없음'}</b>${st.pending ? ` · 올릴 것 ${st.pending}곳` : ''}</p>
+      <button class="btn lg full" id="syncnow" style="margin-top:14px">${I.cloud}지금 동기화</button>` : ''}
+    <div class="stack" style="margin-top:12px">
+      <button class="btn ter full" id="bk">백업 파일 만들기</button>
+      <label class="btn ter full">백업 불러오기<input type="file" id="rs" accept=".txt,.json,text/plain,application/json" hidden></label>
+      ${SYNC_URL ? '<button class="btn link full" id="reteam">팀 코드 다시 입력</button>' : ''}
+    </div>`);
+  if (SYNC_URL) {
+    $('#syncnow').onclick = async () => {
+      if (!navigator.onLine) return alert('인터넷이 연결돼 있지 않아요. 연결되면 저절로 맞춰요.');
+      const b = $('#syncnow');
+      b.disabled = true; b.innerHTML = `${I.sync}동기화 중…`;
+      await syncDrive();
+      while (syncing) await new Promise(r => setTimeout(r, 300));
+      modal.innerHTML = '';
+      if (syncFailed) alert('드라이브에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.');
+      if (curSite) showSync(); else viewHome();
+    };
+    $('#reteam').onclick = async () => {
+      if (!confirm('이 기기의 팀 연결을 끊고 팀 코드를 다시 넣을까요? (이 기기의 현장은 그대로 남아요)')) return;
+      await del('meta', 'team');
+      modal.innerHTML = '';
+      route();
+    };
+  }
+  $('#bk').onclick = async () => {
+    const data = { app: 'suggeom', version: 1, exportedAt: new Date().toISOString(), sites: await getAll('sites'), tags: await getTags() };
+    deliver(new File([JSON.stringify(data)], `수검자서식_백업_${today()}.txt`, { type: 'text/plain' }));
+  };
+  $('#rs').onchange = e => restore(e.target.files[0]);
 }
 
 // 처음 한 번 팀 코드 입력 (안전조회 앱과 같은 방식)
@@ -529,25 +635,117 @@ function busy(text) {
   return el;
 }
 
-// ---------- 첫 화면: 현장 목록 ----------
+// ---------- 첫 화면: 요약 · 검색 · 목록/달력 ----------
+let homeView = 'list', calMonth = today().slice(0, 7), calDay = null, homeQ = '';
+const dayLabel = ds => {
+  const [y, m, d] = ds.split('-').map(Number);
+  return `${y !== new Date().getFullYear() ? y + '년 ' : ''}${m}월 ${d}일 (${'일월화수목금토'[new Date(y, m - 1, d).getDay()]})`;
+};
+// 현장 날짜: 총괄표 '점검일자'를 글자로 적었으면 그 날, 아니면 현장을 만든 날
+function siteDate(s) {
+  const sh = s.sheets.find(x => x.tpl === 'p04');
+  if (sh) {
+    const [y, m, d] = TPL.p04.fields.filter(f => f.date && f.r[1] < 145).slice(0, 3)
+      .map(f => sh.v[f.id]).map(v => (typeof v === 'string' && /^\d+$/.test(v.trim()) ? +v : NaN));
+    if (y > 2000 && m >= 1 && m <= 12 && d >= 1 && d <= 31) return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  return ymd(s.createdAt);
+}
+// 카드에 보일 주소·용량 (총괄표에 글자로 적은 경우만)
+function siteInfo(s) {
+  const sh = s.sheets.find(x => x.tpl === 'p04'), out = [];
+  if (sh) for (const tag of ['site.addr', 'site.kw']) {
+    const f = TPL.p04.fields.find(g => g.tag === tag), v = f && sh.v[f.id];
+    if (typeof v === 'string' && v.trim()) out.push(v.trim());
+  }
+  return out.join(' · ');
+}
+// 진행 상태: 작성 중 → 서명함 → 보냄 (보낸 뒤 고쳤으면 다시 보내라고)
+function siteState(s) {
+  if (s.sentAt && Date.parse(s.updatedAt) - Date.parse(s.sentAt) > 10000) return { cls: 'warn', txt: '보낸 뒤 고침' };
+  if (s.sentAt) return { cls: 'ok', txt: `보냄 ${stamp(s.sentAt)}` };
+  if (s.sign) return { cls: 'info', txt: '서명함 · 보내기 전' };
+  return { cls: 'warn', txt: '작성 중' };
+}
+function siteCard(s) {
+  const st = siteState(s), info = siteInfo(s);
+  return `<button class="site" data-id="${s.id}"><div class="t">${esc(s.name)}</div>
+    <div class="s">${info ? esc(info) : `서식 ${s.sheets.length}장 · ${stamp(s.updatedAt)} 고침`}</div>
+    <div class="badges"><span class="badge">${s.kind}검사</span><span class="badge ${st.cls}">${st.txt}</span>${s.volt === '고압' ? '<span class="badge">고압</span>' : ''}</div></button>`;
+}
+function daysHtml(list) {
+  const groups = [];
+  for (const x of list) {
+    const g = groups[groups.length - 1];
+    if (g && g.date === x.date) g.items.push(x); else groups.push({ date: x.date, items: [x] });
+  }
+  return groups.map(g => `<div class="day-h"><b>${dayLabel(g.date)}</b>${g.date === today() ? '<span class="badge ok">오늘</span>' : ''}<span class="cnt">${g.items.length}곳</span></div>
+    ${g.items.map(x => siteCard(x.s)).join('')}`).join('');
+}
+function calHtml(list) {
+  const byDay = {};
+  for (const x of list) (byDay[x.date] = byDay[x.date] || []).push(x);
+  const [y, m] = calMonth.split('-').map(Number);
+  // 고른 날이 없으면 이 달의 오늘(현장 있으면) 또는 가장 최근 현장 날
+  if (!calDay || !calDay.startsWith(calMonth)) {
+    calDay = byDay[today()] && today().startsWith(calMonth) ? today() : Object.keys(byDay).filter(d => d.startsWith(calMonth)).sort().pop() || null;
+  }
+  const cells = [];
+  for (let i = new Date(y, m - 1, 1).getDay(); i > 0; i--) cells.push('<span></span>');
+  for (let d = 1, n = new Date(y, m, 0).getDate(); d <= n; d++) {
+    const ds = `${calMonth}-${String(d).padStart(2, '0')}`, c = (byDay[ds] || []).length;
+    cells.push(`<button class="cd ${c ? 'has' : ''} ${ds === today() ? 'today' : ''} ${ds === calDay ? 'sel' : ''}" data-day="${ds}"><b>${d}</b>${c ? `<small>${c}곳</small>` : ''}</button>`);
+  }
+  const monthCount = list.filter(x => x.date.startsWith(calMonth)).length;
+  return `<div class="cal"><div class="cal-h">
+      <button class="icon-btn" data-mon="-1" aria-label="이전 달">${I.back}</button>
+      <div class="grow"><b>${y}년 ${m}월</b><small>${monthCount}곳</small></div>
+      <button class="icon-btn" data-mon="1" aria-label="다음 달">${I.next}</button></div>
+    <div class="cal-w">${[...'일월화수목금토'].map(w => `<span>${w}</span>`).join('')}</div>
+    <div class="cal-g">${cells.join('')}</div></div>
+    ${calDay && byDay[calDay] ? daysHtml(byDay[calDay]) : `<p class="empty" style="text-align:center">${calDay ? '이 날은 현장이 없어요.' : monthCount ? '날짜를 누르면 그날 현장이 보여요.' : '이 달에는 현장이 없어요.'}</p>`}`;
+}
 async function viewHome() {
   curSite = null;
-  const sites = (await getAll('sites')).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const all = (await getAll('sites')).map(s => ({ s, date: siteDate(s) }))
+    .sort((a, b) => (b.date + b.s.updatedAt).localeCompare(a.date + a.s.updatedAt));
+  const st = await syncStatus(), month = today().slice(0, 7);
+  const n = { month: all.filter(x => x.date.startsWith(month)).length, draft: all.filter(x => !x.s.sign).length, sent: all.filter(x => x.s.sentAt).length };
   app.innerHTML = `<main>
     ${IN_APP ? outsideHelp() : ''}
-    <h1 class="page-title">수검자 서식</h1>
+    <div class="title-row"><h1 class="page-title">수검자 서식</h1>${syncChipHtml(st)}</div>
     <p class="page-sub">태양광 사용전·정기검사 수검자 준비자료 (한국전기안전공사 서식)</p>
-    ${SYNC_URL ? '<p class="note" id="syncst" style="margin:-12px 0 14px"></p>' : ''}
     <button class="btn lg full" id="add">+ 새 현장</button>
-    ${sites.map(s => `<button class="site" data-id="${s.id}"><div class="t">${esc(s.name)}</div>
-      <div class="s">${s.kind}검사 · 서식 ${s.sheets.length}장${s.sign ? ' · 서명함' : ''} · ${stamp(s.updatedAt)}</div></button>`).join('')
-      || '<p class="empty">아직 현장이 없어요. 위의 "새 현장"을 눌러 시작하세요.</p>'}
-    <button class="btn link" id="more" style="margin-top:16px">더보기 (백업)</button>
+    <div class="stats">
+      <div class="stat"><b>${n.month}</b><span>이번 달 현장</span></div>
+      <div class="stat ${n.draft ? 'warn' : ''}"><b>${n.draft}</b><span>서명 전</span></div>
+      <div class="stat ok"><b>${n.sent}</b><span>보낸 현장</span></div>
+    </div>
+    ${all.length ? `<input type="search" class="search" id="q" placeholder="현장 이름·주소로 찾기" autocomplete="off">
+      <div class="seg" id="hv"><button data-v="list">목록</button><button data-v="cal">달력</button></div>` : ''}
+    <div id="list">${all.length ? '' : '<p class="empty">아직 현장이 없어요. 위의 "새 현장"을 눌러 시작하세요.</p>'}</div>
   </main>`;
-  app.querySelectorAll('.site').forEach(el => el.onclick = () => { location.hash = `#/s/${el.dataset.id}`; });
-  $('#add').onclick = () => newSiteSheet(sites);
-  $('#more').onclick = backupSheet;
-  showSync();
+  const draw = () => {
+    const q = homeQ.trim();
+    const hit = all.filter(x => !q || `${x.s.name} ${siteInfo(x.s)}`.includes(q));
+    $('#hv').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === homeView));
+    $('#list').innerHTML = homeView === 'cal' ? calHtml(hit)
+      : hit.length ? daysHtml(hit) : '<p class="empty">찾는 현장이 없어요. 다른 말로 찾아보세요.</p>';
+    $('#list').querySelectorAll('.site').forEach(el => el.onclick = () => { location.hash = `#/s/${el.dataset.id}`; });
+    $('#list').querySelectorAll('[data-day]').forEach(b => b.onclick = () => { calDay = b.dataset.day; draw(); });
+    $('#list').querySelectorAll('[data-mon]').forEach(b => b.onclick = () => {
+      const [y, m] = calMonth.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.mon), 1);
+      calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; calDay = null; draw();
+    });
+  };
+  if (all.length) {
+    $('#q').value = homeQ;
+    $('#q').oninput = () => { homeQ = $('#q').value; draw(); };
+    $('#hv').onclick = e => { const b = e.target.closest('[data-v]'); if (b) { homeView = b.dataset.v; draw(); } };
+    draw();
+  }
+  $('#add').onclick = () => newSiteSheet(all.map(x => x.s).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+  $('#syncchip').onclick = onSyncChip;
 }
 
 function newSiteSheet(sites) {
@@ -577,20 +775,6 @@ function newSiteSheet(sites) {
   setTimeout(() => $('#nm').focus(), 50);
 }
 
-function backupSheet() {
-  sheetModal(`<h2>백업</h2>
-    <p class="note">${SYNC_URL ? '적은 내용은 구글 드라이브(수검자서식 백업 폴더)에 자동으로 저장돼요. 따로 보관하고 싶을 때만 백업 파일을 만드세요.'
-      : '적은 내용은 이 패드 안에만 저장돼요. 패드를 바꾸거나 초기화하면 사라지니, 가끔 백업 파일을 만들어 카톡·드라이브에 보관해 두세요.'}</p>
-    <div class="stack" style="margin-top:14px">
-      <button class="btn ter full" id="bk">백업 파일 만들기</button>
-      <label class="btn ter full">백업 불러오기<input type="file" id="rs" accept=".txt,.json,text/plain,application/json" hidden></label>
-    </div>`);
-  $('#bk').onclick = async () => {
-    const data = { app: 'suggeom', version: 1, exportedAt: new Date().toISOString(), sites: await getAll('sites'), tags: await getTags() };
-    deliver(new File([JSON.stringify(data)], `수검자서식_백업_${today()}.txt`, { type: 'text/plain' }));
-  };
-  $('#rs').onchange = e => restore(e.target.files[0]);
-}
 async function restore(file) {
   if (!file) return;
   let d;
@@ -611,15 +795,15 @@ function saveFile(file) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
-function deliver(file) {
+function deliver(file, onDone = () => {}) {
   if (CAN_SHARE && navigator.canShare({ files: [file] })) {
     // 안드로이드 카톡은 파일과 제목을 같이 보내면 글자만 받으므로 파일만
-    navigator.share({ files: [file] }).catch(e => {
+    navigator.share({ files: [file] }).then(onDone, e => {
       if (e.name === 'AbortError') return;
       alert(`바로 보내기가 안 돼서 대신 기기에 저장할게요. (${e.name})\n카톡에서 + → 파일 → 다운로드 폴더의 파일을 보내 주세요.`);
-      saveFile(file);
+      saveFile(file); onDone();
     });
-  } else saveFile(file);
+  } else { saveFile(file); onDone(); }
 }
 
 // ---------- PDF: 빈 공식 서식(template.pdf) 위에 적은 내용을 그림으로 겹친다 ----------
@@ -664,10 +848,11 @@ function viewDoc(site, focusSheet) {
     <div class="tb" id="tb">
       <div class="tools row">
         <button class="tool" id="bk" aria-label="현장 목록">${I.back}</button>
-        <div class="ttl grow">${esc(site.name)}<small>${site.kind}검사 · 서식 ${site.sheets.length}장</small></div>
+        <div class="ttl grow">${esc(site.name)}<small>${site.kind}검사 · 서식 ${site.sheets.length}장<span id="docsync"></span></small></div>
         <button class="tool ${site.sign ? 'done' : ''}" id="sg">${I.sign}${site.sign ? '서명함' : '서명'}</button>
         <button class="tool pri" id="send">${I.send}${SEND_HTML}</button>
       </div>
+      <div class="tabs" id="tabs">${site.sheets.map((sh, i) => `<button class="tab" data-go="${sh.id}">${i + 1} ${esc(sheetName(site, sh))}</button>`).join('')}</div>
     </div>
     <div class="panel" id="panel"><div class="inner">
       <div class="row phead">
@@ -694,7 +879,7 @@ function viewDoc(site, focusSheet) {
             ${m.goods.length ? '<button class="okbtn" data-ok>✓ 모두 양호</button>' : ''}
             <button class="icon-btn" data-more aria-label="이 장 더보기">${I.more}</button></div>
           <div class="pscroll"><div class="page" style="aspect-ratio:${m.w}/${m.h}">
-            <img src="bg/${m.tpl}.png" alt="" loading="${i < 2 ? 'eager' : 'lazy'}" decoding="async">
+            <img src="bg/${m.tpl}.png" alt="" decoding="async">
             <canvas></canvas>
             <div class="hits">${m.fields.map(f => {
               const r = f.t === 'check' ? f.hit : f.r;
@@ -753,9 +938,31 @@ function viewDoc(site, focusSheet) {
   // 글자 모드에서 키보드가 올라오면 판을 키보드 위로 올리고, 고른 칸이 가리지 않게 다시 맞춘다
   const onVV = () => { if (!active) return; placePanel(); reveal(active.p, active.f); };
   if (window.visualViewport) ['resize', 'scroll'].forEach(t => visualViewport.addEventListener(t, onVV));
+  // 서식 바로가기: 누르면 그 장 맨 위로, 스크롤하면 지금 보는 장을 표시
+  const tabs = $('#tabs');
+  tabs.onclick = e => {
+    const b = e.target.closest('[data-go]');
+    if (!b) return;
+    closeEdit();
+    scrollTo(0, pages.get(b.dataset.go).sec.getBoundingClientRect().top + scrollY - tb.offsetHeight - 4);
+  };
+  let tabRaf = 0;
+  const markTab = () => {
+    tabRaf = 0;
+    let cur = null;
+    for (const p of pages.values()) { if (p.sec.getBoundingClientRect().top <= tb.offsetHeight + 80) cur = p; else break; }
+    cur = cur || pages.values().next().value;
+    if (!cur) return;
+    tabs.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.go === cur.sh.id));
+    const on = tabs.querySelector('.tab.on');
+    if (on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth) / 2;
+  };
+  const onScroll = () => { if (!tabRaf) tabRaf = requestAnimationFrame(markTab); };
+  addEventListener('scroll', onScroll, { passive: true });
   viewCleanup = () => {
     io.disconnect(); ro.disconnect(); clearTimeout(pdfTimer);
     if (window.visualViewport) ['resize', 'scroll'].forEach(t => visualViewport.removeEventListener(t, onVV));
+    removeEventListener('scroll', onScroll);
     document.body.classList.remove('editing');
   };
   const rerender = () => { viewToken++; viewCleanup(); viewDoc(site); };
@@ -1094,9 +1301,11 @@ function viewDoc(site, focusSheet) {
   $('#sg').onclick = signOwn;
 
   // 보내기: 미리 만들어 둔 PDF가 있으면 바로 공유창, 없으면 만들고 한 번 더 누르게
+  // 보낸 시각을 남겨서 홈 화면에 "보냄 10월 20일"로 보이게
+  const markSent = () => { site.sentAt = new Date().toISOString(); saveSite(site); };
   const send = () => {
     closeEdit();
-    if (pdf.file && pdf.ver === ver) { deliver(pdf.file); return; }
+    if (pdf.file && pdf.ver === ver) { deliver(pdf.file, markSent); return; }
     clearTimeout(pdfTimer);
     const b = busy('PDF 만드는 중…');
     buildPdf().then(() => {
@@ -1105,7 +1314,7 @@ function viewDoc(site, focusSheet) {
       if (pdf.file && pdf.ver === ver) {
         sheetModal(`<h2>PDF가 준비됐어요</h2><p class="note">서식 ${site.sheets.length}장${site.sign ? '' : ' · 아직 서명 안 함'}</p>
           <button class="btn lg full" id="go" style="margin-top:16px">${I.send}${SEND_LABEL}</button>`);
-        $('#go').onclick = () => { modal.innerHTML = ''; deliver(pdf.file); };
+        $('#go').onclick = () => { modal.innerHTML = ''; deliver(pdf.file, markSent); };
       } else alert(`PDF를 만들지 못했어요.\n${pdf.err ? pdf.err.message || pdf.err : '다시 한 번 눌러 주세요.'}`);
     });
   };
@@ -1154,6 +1363,8 @@ function viewDoc(site, focusSheet) {
 
   if (focusSheet && pages.has(focusSheet)) scrollTo(0, pages.get(focusSheet).sec.getBoundingClientRect().top + scrollY - tb.offsetHeight - 8);
   else scrollTo(0, 0);
+  markTab();
+  showSync();
 }
 
 // ---------- 시작 ----------
