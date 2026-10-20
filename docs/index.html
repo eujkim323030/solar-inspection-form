@@ -140,11 +140,28 @@
   .tool.pri { background:var(--primary); }
   .tool[hidden] { display:none; }
   .tool.done { background:var(--primary-pale); color:var(--pos-deep); }
-  /* 서식 바로가기: 누르면 그 장으로, 스크롤하면 지금 보는 장이 까맣게 */
-  .tabs { display:flex; gap:6px; overflow-x:auto; margin:8px -10px -2px; padding:0 10px 2px; scrollbar-width:none; }
-  .tabs::-webkit-scrollbar { display:none; }
-  .tab { flex:none; min-height:38px; padding:0 14px; border-radius:19px; border:0; background:var(--tint); color:var(--body); font-size:14px; font-weight:700; white-space:nowrap; cursor:pointer; }
-  .tab.on { background:var(--ink); color:#fff; }
+  /* 서식 바로가기: 지금 보는 장을 크게 (누르면 서식 목록), 옆 화살표로 이전·다음 장 */
+  .snav { display:flex; gap:8px; max-width:900px; margin:8px auto 0; }
+  .snav .cur { flex:1; min-width:0; height:52px; display:flex; align-items:center; gap:8px; padding:0 12px 0 16px; border:0; border-radius:16px; background:var(--ink); color:#fff; text-align:left; cursor:pointer; }
+  .snav .cur small { display:block; font-size:12px; font-weight:600; color:#c9ccc6; line-height:1.2; }
+  .snav .cur b { display:block; font-size:17px; font-weight:800; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .snav .lst { flex:none; display:inline-flex; align-items:center; gap:4px; color:var(--primary); font-size:15px; font-weight:700; }
+  .snav .lst svg { width:20px; height:20px; }
+  .snav .tool { height:52px; min-width:52px; }
+  .snav .tool:disabled { opacity:.35; cursor:default; }
+  /* 서식 목록 창: 장마다 큰 줄 하나, 적은 칸·체크·서명 상태 */
+  .toc { display:grid; gap:8px; margin-top:14px; }
+  .toc button { display:flex; align-items:center; gap:12px; width:100%; min-height:68px; padding:12px; border:0; border-radius:16px; background:var(--tint); color:var(--ink); text-align:left; cursor:pointer; }
+  .toc button > svg { flex:none; width:20px; height:20px; color:var(--mute); }
+  .toc .no { flex:none; width:34px; height:34px; border-radius:9999px; background:var(--ink); color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .toc b { display:block; font-size:17px; font-weight:800; line-height:1.3; }
+  .toc small { display:block; font-size:12px; color:var(--body); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .toc .badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .toc .badge:not(.ok):not(.warn) { background:var(--canvas); }
+  .toc button.on { background:var(--ink); color:#fff; }
+  .toc button.on .no { background:var(--primary); color:var(--ink); }
+  .toc button.on small, .toc button.on > svg { color:#c9ccc6; }
+  @media (min-width: 760px) { .sheet.wide { max-width:900px; } .sheet.wide .toc { grid-template-columns:1fr 1fr; } }
   /* 쓰는 판: 칸을 누르면 화면 아래에서 올라온다 (은행 패드 서류처럼) */
   .panel { position:fixed; left:0; right:0; bottom:0; z-index:12; display:none; background:var(--canvas); border-radius:22px 22px 0 0; box-shadow:0 -6px 24px rgba(14,15,12,.18); padding:12px 12px calc(12px + env(safe-area-inset-bottom)); }
   body.editing .panel { display:block; }
@@ -248,6 +265,9 @@ const I = {
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+  dn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 00.6-7.96A6 6 0 006.2 9.1 4.5 4.5 0 007 18z"/></svg>',
   sync: '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 11-2.3-5.6"/><path d="M20 4v5h-5"/></svg>',
 };
@@ -930,7 +950,11 @@ function viewDoc(site, focusSheet) {
         <button class="tool ${site.sign ? 'done' : ''}" id="sg">${I.sign}${site.sign ? '서명함' : '서명'}</button>
         <button class="tool pri" id="send">${I.send}${SEND_HTML}</button>
       </div>
-      <div class="tabs" id="tabs">${site.sheets.map((sh, i) => `<button class="tab" data-go="${sh.id}">${i + 1} ${esc(sheetName(site, sh))}</button>`).join('')}</div>
+      <div class="snav">
+        <button class="cur" id="cur"><span class="grow"><small id="curno"></small><b id="curnm"></b></span><span class="lst">${I.list}목록</span></button>
+        <button class="tool" id="prev" aria-label="이전 장">${I.up}<span class="long">이전 장</span></button>
+        <button class="tool" id="next" aria-label="다음 장">${I.dn}<span class="long">다음 장</span></button>
+      </div>
     </div>
     <div class="panel" id="panel"><div class="inner">
       <div class="row phead">
@@ -1020,26 +1044,52 @@ function viewDoc(site, focusSheet) {
   // 글자 모드에서 키보드가 올라오면 판을 키보드 위로 올리고, 고른 칸이 가리지 않게 다시 맞춘다
   const onVV = () => { if (!active) return; placePanel(); reveal(active.p, active.f); };
   if (window.visualViewport) ['resize', 'scroll'].forEach(t => visualViewport.addEventListener(t, onVV));
-  // 서식 바로가기: 누르면 그 장 맨 위로, 스크롤하면 지금 보는 장을 표시
-  const tabs = $('#tabs');
-  tabs.onclick = e => {
-    const b = e.target.closest('[data-go]');
-    if (!b) return;
-    closeEdit();
-    scrollTo(0, pages.get(b.dataset.go).sec.getBoundingClientRect().top + scrollY - tb.offsetHeight - 4);
-  };
-  let tabRaf = 0;
+  // 서식 바로가기: 위 막대에 지금 보는 장 (스크롤하면 바뀜). 누르면 서식 목록, 화살표는 이전·다음 장
+  const list = [...pages.values()];
+  let curP = null, tabRaf = 0;
+  // 옮긴 뒤 바로 표시를 바꿔서 화살표를 빨리 여러 번 눌러도 한 장씩 넘어가게
+  const goTo = p => { closeEdit(); modal.innerHTML = ''; scrollTo(0, p.sec.getBoundingClientRect().top + scrollY - tb.offsetHeight - 4); markTab(); };
   const markTab = () => {
     tabRaf = 0;
-    let cur = null;
-    for (const p of pages.values()) { if (p.sec.getBoundingClientRect().top <= tb.offsetHeight + 80) cur = p; else break; }
-    cur = cur || pages.values().next().value;
-    if (!cur) return;
-    tabs.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.go === cur.sh.id));
-    const on = tabs.querySelector('.tab.on');
-    if (on) tabs.scrollLeft = on.offsetLeft - (tabs.clientWidth - on.offsetWidth) / 2;
+    let cur = list[0];
+    for (const p of list) { if (p.sec.getBoundingClientRect().top <= tb.offsetHeight + 80) cur = p; else break; }
+    if (!cur || cur === curP) return;
+    curP = cur;
+    const i = list.indexOf(cur);
+    $('#curno').textContent = `서식 ${i + 1} / ${list.length}`;
+    $('#curnm').textContent = sheetName(site, cur.sh);
+    $('#prev').disabled = i === 0;
+    $('#next').disabled = i === list.length - 1;
   };
   const onScroll = () => { if (!tabRaf) tabRaf = requestAnimationFrame(markTab); };
+  $('#prev').onclick = () => { const i = list.indexOf(curP); if (i > 0) goTo(list[i - 1]); };
+  $('#next').onclick = () => { const i = list.indexOf(curP); if (i < list.length - 1) goTo(list[i + 1]); };
+  // 장마다 상태: 적은 칸 수, 체크(양호/불량 같은 하나 고르는 줄) 진행, 서명.
+  // 저절로 들어가는 칸(현장 이름·날짜·작성자·기본값)은 적은 칸으로 세지 않는다.
+  function sheetBadges({ sh, m }) {
+    const out = [], nIn = m.inputs.filter(f => !f.tag && !f.default && sh.v[f.id] != null).length;
+    if (nIn) out.push(`<span class="badge">적은 칸 ${nIn}</span>`);
+    else if (!m.fields.some(f => f.t === 'check' && sh.v[f.id])) out.push('<span class="badge">아직 안 적음</span>');
+    const groups = {};
+    for (const f of m.fields) if (f.ex) (groups[f.grp] = groups[f.grp] || []).push(f);
+    const gs = Object.values(groups), done = gs.filter(g => g.some(f => sh.v[f.id])).length;
+    if (gs.length) out.push(`<span class="badge ${done === gs.length ? 'ok' : ''}">체크 ${done}/${gs.length}</span>`);
+    const signed = m.sig.filter((_, i) => signAt(m, sh, i, site.sign)).length;
+    if (m.sig.length) out.push(signed === m.sig.length ? '<span class="badge ok">서명함</span>'
+      : `<span class="badge warn">${m.sig.length > 1 ? `서명 ${signed}/${m.sig.length}` : '서명 전'}</span>`);
+    return out.join('');
+  }
+  $('#cur').onclick = () => {
+    closeEdit();
+    sheetModal(`<h2>서식 목록</h2>
+      <p class="note">${site.kind}검사 · 서식 ${list.length}장 · 누르면 그 장으로 가요</p>
+      <div class="toc">${list.map((p, i) => `<button class="${p === curP ? 'on' : ''}" data-go="${p.sh.id}"><span class="no">${i + 1}</span>
+        <span class="grow"><b>${esc(sheetName(site, p.sh))}</b><small>${esc(p.m.title)}</small><span class="badges">${sheetBadges(p)}</span></span>${I.next}</button>`).join('')}</div>`);
+    modal.querySelector('.sheet').classList.add('wide');
+    modal.querySelector('.toc').onclick = e => { const b = e.target.closest('[data-go]'); if (b) goTo(pages.get(b.dataset.go)); };
+    const on = modal.querySelector('.toc .on');
+    if (on) on.scrollIntoView({ block: 'nearest' });
+  };
   addEventListener('scroll', onScroll, { passive: true });
   viewCleanup = () => {
     io.disconnect(); ro.disconnect(); clearTimeout(pdfTimer);
