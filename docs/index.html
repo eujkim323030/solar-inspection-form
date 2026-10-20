@@ -71,7 +71,10 @@
   @keyframes spin { to { transform:rotate(360deg); } }
   .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0 16px; }
   .stat { background:var(--canvas); border-radius:18px; padding:12px 14px; border:0; text-align:left; font:inherit; color:inherit; cursor:pointer; }
-  .stat.on { box-shadow:inset 0 0 0 2px var(--ink); }
+  .stat.on { background:var(--ink); color:#fff; }
+  .stat.on span { color:#d9dcd6; }
+  .stat.on b, .stat.on.ok b { color:var(--primary); }
+  .stat.on.warn b { color:var(--warn); }
   .stat b { display:block; font-size:26px; font-weight:900; line-height:1.15; }
   .stat span { font-size:13px; font-weight:600; color:var(--body); }
   .stat.warn b { color:#a87300; }
@@ -770,8 +773,9 @@ async function viewHome() {
       <button class="btn lg full" id="add">+ 새 현장</button>
       ${stats}
       ${all.length ? `${search}<div class="seg" id="hv"><button data-v="list">목록</button><button data-v="cal">달력</button></div>` : ''}
+      <div class="list-h"><b id="lh"></b><button class="btn link" id="clearf" hidden>전체 보기</button></div>
       <div id="list"></div></main>`;
-  const empty = '<p class="empty">아직 현장이 없어요. "새 현장"을 눌러 시작하세요.</p>', none = '<p class="empty">해당하는 현장이 없어요.</p>';
+  const empty = '<p class="empty">아직 현장이 없어요. "새 현장"을 눌러 시작하세요.</p>';
   const bindCards = root => root.querySelectorAll('.site').forEach(el => el.onclick = () => { location.hash = `#/s/${el.dataset.id}`; });
   const bindMonths = root => root.querySelectorAll('[data-mon]').forEach(b => b.onclick = () => {
     const [y, m] = calMonth.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.mon), 1);
@@ -781,11 +785,15 @@ async function viewHome() {
     const q = homeQ.trim();
     const hit = all.filter(x => (!q || `${x.s.name} ${siteInfo(x.s)}`.includes(q)) && (!homeFilter || FILTERS[homeFilter](x)));
     app.querySelectorAll('.stat').forEach(b => b.classList.toggle('on', b.dataset.f === homeFilter));
+    // 목록 위 한 줄: 지금 무엇을 보고 있는지 ("서명 전 현장 2곳 · 전체 보기")
+    const day = wide && padDay, shown = day ? hit.filter(x => x.date === padDay) : hit;
+    const label = day ? dayLabel(padDay) + ' 현장' : homeFilter ? FILTER_NAME[homeFilter] : '전체 현장';
+    $('#lh').textContent = `${label} ${shown.length}곳`;
+    $('#lh').parentElement.style.display = all.length ? '' : 'none';
+    $('#clearf').hidden = !day && !homeFilter;
+    const none = `<p class="empty">${q ? '찾는 현장이 없어요. 다른 말로 찾아보세요.' : `${label}이 없어요.`}</p>`;
     if (wide) {
-      const shown = padDay ? hit.filter(x => x.date === padDay) : hit;
       $('#calbox').innerHTML = calGridHtml(hit, padDay);
-      $('#lh').textContent = `${padDay ? dayLabel(padDay) + ' 현장' : homeFilter ? FILTER_NAME[homeFilter] : '전체 현장'} ${shown.length}곳`;
-      $('#clearf').hidden = !padDay && !homeFilter;
       $('#list').innerHTML = !all.length ? empty : shown.length ? daysHtml(shown) : none;
       $('#calbox').querySelectorAll('[data-day]').forEach(b => b.onclick = () => {
         padDay = padDay === b.dataset.day ? null : b.dataset.day;
@@ -804,7 +812,13 @@ async function viewHome() {
   }
   if ($('#q')) { $('#q').value = homeQ; $('#q').oninput = () => { homeQ = $('#q').value; draw(); }; }
   if ($('#hv')) $('#hv').onclick = e => { const b = e.target.closest('[data-v]'); if (b) { homeView = b.dataset.v; draw(); } };
-  app.querySelectorAll('.stat').forEach(b => b.onclick = () => { homeFilter = homeFilter === b.dataset.f ? '' : b.dataset.f; padDay = null; draw(); });
+  app.querySelectorAll('.stat').forEach(b => b.onclick = () => {
+    homeFilter = homeFilter === b.dataset.f ? '' : b.dataset.f;
+    padDay = null;
+    draw();
+    // 폰은 목록이 아래에 있어서, 누르면 걸러진 목록이 보이게 내려 준다
+    if (!wide && homeFilter) $('.list-h').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
   if ($('#clearf')) $('#clearf').onclick = () => { homeFilter = ''; padDay = null; draw(); };
   draw();
   $('#add').onclick = () => newSiteSheet(all.map(x => x.s).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
