@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>태양광 수검자 서식</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" defer></script>
 <style>
   /* 안전조회 앱과 같은 모양: 세이지 배경, 흰 카드, 라임 주 버튼 */
@@ -69,7 +70,8 @@
   .spin { animation:spin 1s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0 16px; }
-  .stat { background:var(--canvas); border-radius:18px; padding:12px 14px; }
+  .stat { background:var(--canvas); border-radius:18px; padding:12px 14px; border:0; text-align:left; font:inherit; color:inherit; cursor:pointer; }
+  .stat.on { box-shadow:inset 0 0 0 2px var(--ink); }
   .stat b { display:block; font-size:26px; font-weight:900; line-height:1.15; }
   .stat span { font-size:13px; font-weight:600; color:var(--body); }
   .stat.warn b { color:#a87300; }
@@ -99,6 +101,22 @@
   .cd.today b { text-decoration:underline; text-underline-offset:3px; }
   .cd.sel { background:var(--ink); color:var(--primary); }
   .cd.sel small { color:var(--primary); }
+  .btn[hidden] { display:none; }
+  /* 패드(넓은 화면) 홈: 왼쪽 요약·달력 고정, 오른쪽 현장 카드 두 줄 */
+  main.home.wide { max-width:1180px; padding-left:24px; padding-right:24px; }
+  .home-head { display:flex; align-items:flex-start; gap:16px; }
+  .home-head .btn { flex:none; min-width:210px; margin-top:6px; }
+  .home-grid { display:grid; grid-template-columns:minmax(300px, 360px) 1fr; gap:20px; align-items:start; }
+  .home-side { position:sticky; top:16px; }
+  .home-side .stats { margin-top:0; }
+  .home-side .cal { margin-top:0; }
+  .list-h { display:flex; align-items:center; gap:8px; margin:2px 4px 0; min-height:44px; }
+  .list-h b { flex:1; font-size:18px; font-weight:800; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px; align-items:start; }
+  .cards .day-h { grid-column:1 / -1; margin-top:12px; }
+  .cards .day-h:first-child { margin-top:4px; }
+  .cards .site, .cards .empty { margin-top:0; }
+  .cards .empty { grid-column:1 / -1; }
 
   /* 바텀시트 */
   .sheet-bg { position:fixed; inset:0; background:rgba(14,15,12,.4); z-index:20; display:flex; align-items:flex-end; justify-content:center; }
@@ -284,6 +302,13 @@ function goodFirsts(m) {
 // ---------- 글자·체크·서명 그리기 (화면과 PDF가 같은 함수를 쓴다) ----------
 const FONT = '-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif';
 const INK = '#111111';
+// 타이핑한 글자: 인쇄된 서식(검정 돋움)과 구분되게 파란 나눔고딕, 칸 높이의 60%·최대 9pt
+const TEXT_FONT = '"Nanum Gothic",' + FONT, TEXT_INK = '#1f3f9a';
+// 그리기 전에 그 장 글자에 필요한 나눔고딕 조각을 받아 둔다 (인터넷이 없고 받아 둔 적도 없으면 기본 글꼴로)
+function fontsFor(sh) {
+  const t = Object.values(sh.v).filter(v => typeof v === 'string').join('');
+  return t ? document.fonts.load('10px "Nanum Gothic"', t).catch(() => {}) : Promise.resolve();
+}
 function wrapLines(ctx, text, w) {
   const out = [];
   for (const para of String(text).split('\n')) {
@@ -299,14 +324,14 @@ function wrapLines(ctx, text, w) {
 function fit(ctx, f, text, scale) {
   const [x0, y0, x1, y1] = f.r, w = (x1 - x0 - 2) * scale, h = (y1 - y0 - 1) * scale;
   const multi = f.t === 'area';
-  let size = Math.min(multi ? 9 : (y1 - y0) * 0.72, 10.5) * scale;
+  let size = Math.min(multi ? 8.5 : (y1 - y0) * 0.6, 9) * scale;
   for (; size >= 3.5 * scale; size -= 0.25 * scale) {
-    ctx.font = `${size}px ${FONT}`;
+    ctx.font = `${size}px ${TEXT_FONT}`;
     if (!multi) { if (ctx.measureText(text).width <= w) return { size, lines: [text] }; continue; }
     const lines = wrapLines(ctx, text, w);
     if (lines.length * size * 1.25 <= h) return { size, lines };
   }
-  ctx.font = `${size}px ${FONT}`;
+  ctx.font = `${size}px ${TEXT_FONT}`;
   return { size, lines: multi ? wrapLines(ctx, text, w) : [text] };
 }
 // 손글씨 값: { ink: [[x,y,x,y…] 획들], box: [왼,위,오른,아래] } — 좌표 단위는 패드 높이 = 100
@@ -359,7 +384,7 @@ function drawSheet(ctx, sh, scale, sign) {
     const text = v;
     if (!text) continue;
     const { size, lines } = fit(ctx, f, text, scale);
-    ctx.fillStyle = INK;
+    ctx.fillStyle = TEXT_INK;
     const [x0, y0, x1, y1] = f.r;
     if (f.t === 'area') {
       ctx.textAlign = 'left';
@@ -682,19 +707,14 @@ function daysHtml(list) {
   return groups.map(g => `<div class="day-h"><b>${dayLabel(g.date)}</b>${g.date === today() ? '<span class="badge ok">오늘</span>' : ''}<span class="cnt">${g.items.length}곳</span></div>
     ${g.items.map(x => siteCard(x.s)).join('')}`).join('');
 }
-function calHtml(list) {
+function calGridHtml(list, sel) {
   const byDay = {};
-  for (const x of list) (byDay[x.date] = byDay[x.date] || []).push(x);
-  const [y, m] = calMonth.split('-').map(Number);
-  // 고른 날이 없으면 이 달의 오늘(현장 있으면) 또는 가장 최근 현장 날
-  if (!calDay || !calDay.startsWith(calMonth)) {
-    calDay = byDay[today()] && today().startsWith(calMonth) ? today() : Object.keys(byDay).filter(d => d.startsWith(calMonth)).sort().pop() || null;
-  }
-  const cells = [];
+  for (const x of list) byDay[x.date] = (byDay[x.date] || 0) + 1;
+  const [y, m] = calMonth.split('-').map(Number), cells = [];
   for (let i = new Date(y, m - 1, 1).getDay(); i > 0; i--) cells.push('<span></span>');
   for (let d = 1, n = new Date(y, m, 0).getDate(); d <= n; d++) {
-    const ds = `${calMonth}-${String(d).padStart(2, '0')}`, c = (byDay[ds] || []).length;
-    cells.push(`<button class="cd ${c ? 'has' : ''} ${ds === today() ? 'today' : ''} ${ds === calDay ? 'sel' : ''}" data-day="${ds}"><b>${d}</b>${c ? `<small>${c}곳</small>` : ''}</button>`);
+    const ds = `${calMonth}-${String(d).padStart(2, '0')}`, c = byDay[ds] || 0;
+    cells.push(`<button class="cd ${c ? 'has' : ''} ${ds === today() ? 'today' : ''} ${ds === sel ? 'sel' : ''}" data-day="${ds}"><b>${d}</b>${c ? `<small>${c}곳</small>` : ''}</button>`);
   }
   const monthCount = list.filter(x => x.date.startsWith(calMonth)).length;
   return `<div class="cal"><div class="cal-h">
@@ -702,48 +722,91 @@ function calHtml(list) {
       <div class="grow"><b>${y}년 ${m}월</b><small>${monthCount}곳</small></div>
       <button class="icon-btn" data-mon="1" aria-label="다음 달">${I.next}</button></div>
     <div class="cal-w">${[...'일월화수목금토'].map(w => `<span>${w}</span>`).join('')}</div>
-    <div class="cal-g">${cells.join('')}</div></div>
-    ${calDay && byDay[calDay] ? daysHtml(byDay[calDay]) : `<p class="empty" style="text-align:center">${calDay ? '이 날은 현장이 없어요.' : monthCount ? '날짜를 누르면 그날 현장이 보여요.' : '이 달에는 현장이 없어요.'}</p>`}`;
+    <div class="cal-g">${cells.join('')}</div></div>`;
 }
+// 폰 달력: 고른 날이 없으면 이 달의 오늘(현장 있으면) 또는 가장 최근 현장 날. 달력 아래에 그날 현장
+function calHtml(list) {
+  const days = new Set(list.map(x => x.date));
+  if (!calDay || !calDay.startsWith(calMonth)) {
+    calDay = days.has(today()) && today().startsWith(calMonth) ? today() : [...days].filter(d => d.startsWith(calMonth)).sort().pop() || null;
+  }
+  const dayList = list.filter(x => x.date === calDay), monthCount = list.filter(x => x.date.startsWith(calMonth)).length;
+  return calGridHtml(list, calDay) + (dayList.length ? daysHtml(dayList)
+    : `<p class="empty" style="text-align:center">${calDay ? '이 날은 현장이 없어요.' : monthCount ? '날짜를 누르면 그날 현장이 보여요.' : '이 달에는 현장이 없어요.'}</p>`);
+}
+// 패드처럼 넓은 화면(가로 760px 이상)은 홈을 두 칸으로: 왼쪽 요약·달력, 오른쪽 현장 카드
+const WIDE = matchMedia('(min-width: 760px)');
+WIDE.addEventListener('change', () => { if (!curSite && $('main.home')) viewHome(); });
+// 요약 칸을 누르면 그 현장만 (다시 누르면 전체). 패드는 달력 날짜를 눌러도 그날 현장만
+let homeFilter = '', padDay = null;
+const FILTERS = { month: x => x.date.startsWith(today().slice(0, 7)), draft: x => !x.s.sign, sent: x => !!x.s.sentAt };
+const FILTER_NAME = { month: '이번 달 현장', draft: '서명 전 현장', sent: '보낸 현장' };
 async function viewHome() {
   curSite = null;
   const all = (await getAll('sites')).map(s => ({ s, date: siteDate(s) }))
     .sort((a, b) => (b.date + b.s.updatedAt).localeCompare(a.date + a.s.updatedAt));
-  const st = await syncStatus(), month = today().slice(0, 7);
-  const n = { month: all.filter(x => x.date.startsWith(month)).length, draft: all.filter(x => !x.s.sign).length, sent: all.filter(x => x.s.sentAt).length };
-  app.innerHTML = `<main>
-    ${IN_APP ? outsideHelp() : ''}
-    <div class="title-row"><h1 class="page-title">수검자 서식</h1>${syncChipHtml(st)}</div>
-    <p class="page-sub">태양광 사용전·정기검사 수검자 준비자료 (한국전기안전공사 서식)</p>
-    <button class="btn lg full" id="add">+ 새 현장</button>
-    <div class="stats">
-      <div class="stat"><b>${n.month}</b><span>이번 달 현장</span></div>
-      <div class="stat ${n.draft ? 'warn' : ''}"><b>${n.draft}</b><span>서명 전</span></div>
-      <div class="stat ok"><b>${n.sent}</b><span>보낸 현장</span></div>
-    </div>
-    ${all.length ? `<input type="search" class="search" id="q" placeholder="현장 이름·주소로 찾기" autocomplete="off">
-      <div class="seg" id="hv"><button data-v="list">목록</button><button data-v="cal">달력</button></div>` : ''}
-    <div id="list">${all.length ? '' : '<p class="empty">아직 현장이 없어요. 위의 "새 현장"을 눌러 시작하세요.</p>'}</div>
-  </main>`;
-  const draw = () => {
+  const st = await syncStatus(), wide = WIDE.matches;
+  const n = { month: all.filter(FILTERS.month).length, draft: all.filter(FILTERS.draft).length, sent: all.filter(FILTERS.sent).length };
+  const head = `<div class="title-row"><h1 class="page-title">수검자 서식</h1>${syncChipHtml(st)}</div>
+    <p class="page-sub">태양광 사용전·정기검사 수검자 준비자료 (한국전기안전공사 서식)</p>`;
+  const stats = `<div class="stats">
+      <button class="stat" data-f="month"><b>${n.month}</b><span>이번 달 현장</span></button>
+      <button class="stat ${n.draft ? 'warn' : ''}" data-f="draft"><b>${n.draft}</b><span>서명 전</span></button>
+      <button class="stat ok" data-f="sent"><b>${n.sent}</b><span>보낸 현장</span></button>
+    </div>`;
+  const search = '<input type="search" class="search" id="q" placeholder="현장 이름·주소로 찾기" autocomplete="off">';
+  app.innerHTML = wide ? `<main class="home wide">
+      ${IN_APP ? outsideHelp() : ''}
+      <div class="home-head"><div class="grow">${head}</div><button class="btn lg" id="add">+ 새 현장</button></div>
+      <div class="home-grid">
+        <aside class="home-side">${stats}<div id="calbox"></div></aside>
+        <section>${search}
+          <div class="list-h"><b id="lh"></b><button class="btn link" id="clearf" hidden>전체 보기</button></div>
+          <div class="cards" id="list"></div></section>
+      </div></main>`
+    : `<main class="home">
+      ${IN_APP ? outsideHelp() : ''}
+      ${head}
+      <button class="btn lg full" id="add">+ 새 현장</button>
+      ${stats}
+      ${all.length ? `${search}<div class="seg" id="hv"><button data-v="list">목록</button><button data-v="cal">달력</button></div>` : ''}
+      <div id="list"></div></main>`;
+  const empty = '<p class="empty">아직 현장이 없어요. "새 현장"을 눌러 시작하세요.</p>', none = '<p class="empty">해당하는 현장이 없어요.</p>';
+  const bindCards = root => root.querySelectorAll('.site').forEach(el => el.onclick = () => { location.hash = `#/s/${el.dataset.id}`; });
+  const bindMonths = root => root.querySelectorAll('[data-mon]').forEach(b => b.onclick = () => {
+    const [y, m] = calMonth.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.mon), 1);
+    calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; calDay = null; draw();
+  });
+  function draw() {
     const q = homeQ.trim();
-    const hit = all.filter(x => !q || `${x.s.name} ${siteInfo(x.s)}`.includes(q));
-    $('#hv').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === homeView));
-    $('#list').innerHTML = homeView === 'cal' ? calHtml(hit)
-      : hit.length ? daysHtml(hit) : '<p class="empty">찾는 현장이 없어요. 다른 말로 찾아보세요.</p>';
-    $('#list').querySelectorAll('.site').forEach(el => el.onclick = () => { location.hash = `#/s/${el.dataset.id}`; });
-    $('#list').querySelectorAll('[data-day]').forEach(b => b.onclick = () => { calDay = b.dataset.day; draw(); });
-    $('#list').querySelectorAll('[data-mon]').forEach(b => b.onclick = () => {
-      const [y, m] = calMonth.split('-').map(Number), d = new Date(y, m - 1 + Number(b.dataset.mon), 1);
-      calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; calDay = null; draw();
-    });
-  };
-  if (all.length) {
-    $('#q').value = homeQ;
-    $('#q').oninput = () => { homeQ = $('#q').value; draw(); };
-    $('#hv').onclick = e => { const b = e.target.closest('[data-v]'); if (b) { homeView = b.dataset.v; draw(); } };
-    draw();
+    const hit = all.filter(x => (!q || `${x.s.name} ${siteInfo(x.s)}`.includes(q)) && (!homeFilter || FILTERS[homeFilter](x)));
+    app.querySelectorAll('.stat').forEach(b => b.classList.toggle('on', b.dataset.f === homeFilter));
+    if (wide) {
+      const shown = padDay ? hit.filter(x => x.date === padDay) : hit;
+      $('#calbox').innerHTML = calGridHtml(hit, padDay);
+      $('#lh').textContent = `${padDay ? dayLabel(padDay) + ' 현장' : homeFilter ? FILTER_NAME[homeFilter] : '전체 현장'} ${shown.length}곳`;
+      $('#clearf').hidden = !padDay && !homeFilter;
+      $('#list').innerHTML = !all.length ? empty : shown.length ? daysHtml(shown) : none;
+      $('#calbox').querySelectorAll('[data-day]').forEach(b => b.onclick = () => {
+        padDay = padDay === b.dataset.day ? null : b.dataset.day;
+        homeFilter = '';   // 날짜를 고르면 그날 현장 전부
+        draw();
+      });
+      bindMonths($('#calbox'));
+    } else {
+      if (!all.length) { $('#list').innerHTML = empty; return; }
+      $('#hv').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === homeView));
+      $('#list').innerHTML = homeView === 'cal' ? calHtml(hit) : hit.length ? daysHtml(hit) : none;
+      $('#list').querySelectorAll('[data-day]').forEach(b => b.onclick = () => { calDay = b.dataset.day; draw(); });
+      bindMonths($('#list'));
+    }
+    bindCards($('#list'));
   }
+  if ($('#q')) { $('#q').value = homeQ; $('#q').oninput = () => { homeQ = $('#q').value; draw(); }; }
+  if ($('#hv')) $('#hv').onclick = e => { const b = e.target.closest('[data-v]'); if (b) { homeView = b.dataset.v; draw(); } };
+  app.querySelectorAll('.stat').forEach(b => b.onclick = () => { homeFilter = homeFilter === b.dataset.f ? '' : b.dataset.f; padDay = null; draw(); });
+  if ($('#clearf')) $('#clearf').onclick = () => { homeFilter = ''; padDay = null; draw(); };
+  draw();
   $('#add').onclick = () => newSiteSheet(all.map(x => x.s).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
   $('#syncchip').onclick = onSyncChip;
 }
@@ -823,6 +886,7 @@ async function makePdfFile(site, stale) {
       doc.addPage(pg);
       if (!filled(sh) && !m.sig.some((_, i) => signAt(m, sh, i, site.sign))) continue;
       cv.width = Math.round(m.w * S); cv.height = Math.round(m.h * S);
+      await fontsFor(sh);
       drawSheet(ctx, sh, S, site.sign);
       const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
       pg.drawImage(await doc.embedPng(await blob.arrayBuffer()), { x: 0, y: 0, width: m.w, height: m.h });
@@ -916,9 +980,13 @@ function viewDoc(site, focusSheet) {
   });
   const paint = p => {
     if (!p.on) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1), w = p.page.clientWidth;
-    p.cv.width = Math.round(w * dpr); p.cv.height = Math.round(w * p.m.h / p.m.w * dpr);
-    drawSheet(p.ctx, p.sh, p.cv.width / p.m.w, site.sign);
+    fontsFor(p.sh).then(() => {   // 글꼴이 준비된 뒤에 그려서 글자 모양이 바뀌며 깜빡이지 않게
+      if (!p.on) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1), w = p.page.clientWidth;
+      const W = Math.round(w * dpr), H = Math.round(w * p.m.h / p.m.w * dpr);
+      if (p.cv.width !== W || p.cv.height !== H) { p.cv.width = W; p.cv.height = H; }
+      drawSheet(p.ctx, p.sh, p.cv.width / p.m.w, site.sign);
+    });
   };
   const io = new IntersectionObserver(entries => {
     for (const e of entries) {
