@@ -135,6 +135,10 @@
   .tb { position:fixed; top:0; left:0; right:0; z-index:10; background:var(--canvas); box-shadow:0 1px 0 var(--line); padding:calc(8px + env(safe-area-inset-top)) 10px 8px; }
   .tb .ttl { font-weight:800; font-size:17px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tb .ttl small { display:block; font-weight:500; font-size:13px; color:var(--body); }
+  .tb .ttl small svg { width:14px; height:14px; vertical-align:-2px; margin-right:3px; }
+  .tb .ttl small.ok { color:var(--pos-deep); }
+  .tb .ttl small.warn { color:#a87300; }
+  .tb .ttl small.bad { color:var(--neg); }
   .tool { flex:none; min-width:48px; height:48px; padding:0 14px; border-radius:14px; border:0; background:var(--tint); color:var(--ink); font-size:16px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; white-space:nowrap; }
   .tool svg { width:22px; height:22px; }
   .tool.pri { background:var(--primary); }
@@ -179,10 +183,18 @@
   .doc { padding:calc(var(--tbh, 66px) + 8px) 6px 40px; }
   body.editing .doc { padding-bottom:calc(var(--pnh, 300px) + 24px); }
   .pscroll { max-width:1100px; margin:0 auto; }
-  /* 폰: 서식을 패드와 같은 크기로 보여 주고 좌우로 밀어서 본다 */
+  .snav .zoom { display:none; }
+  /* 폰: 처음엔 서식 한 장이 화면에 다 보이고(한 장 보기), 누르거나 두 손가락으로 벌리면
+     패드와 같은 크기로 커져서 좌우로 밀어 본다(body.big). 오므리면 다시 한 장 보기 */
   @media (max-width: 700px) {
-    .pscroll { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -6px; }
-    .pscroll .page { width:760px; max-width:none; margin:0; }
+    body.big .pscroll { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -6px; }
+    body.big .pscroll .page { width:760px; max-width:none; margin:0; }
+    .doc { touch-action:pan-x pan-y; }
+    .snav { gap:6px; }
+    .snav .tool { min-width:44px; padding:0; }
+    .snav .zoom { display:inline-flex; }
+    .snav .cur { padding:0 10px 0 14px; }
+    .snav .cur b { font-size:16px; }
     .long { display:none; }
     .tb .ttl { font-size:15px; }
     .tool { padding:0 10px; }
@@ -268,6 +280,8 @@ const I = {
   up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
   dn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
   list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  zin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M10.5 7.5v6M7.5 10.5h6"/></svg>',
+  zout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20M7.5 10.5h6"/></svg>',
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 00.6-7.96A6 6 0 006.2 9.1 4.5 4.5 0 007 18z"/></svg>',
   sync: '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 11-2.3-5.6"/><path d="M20 4v5h-5"/></svg>',
 };
@@ -581,9 +595,12 @@ async function showSync() {
   if (!$('#syncchip') && !$('#docsync')) return;
   const st = await syncStatus(), chip = $('#syncchip'), ds = $('#docsync');
   if (chip) { chip.outerHTML = syncChipHtml(st); $('#syncchip').onclick = onSyncChip; }
+  // 현장 화면 제목 밑: 드라이브 상태만 짧게 (폰에서 잘리지 않게)
   if (ds && SYNC_URL) {
-    ds.textContent = ' · ' + (syncing ? '드라이브에 올리는 중…' : syncFailed ? '드라이브 연결 안 됨'
-      : curSite && st.pendingIds.includes(curSite.id) ? '드라이브에 올릴 내용 있음' : '드라이브 저장됨');
+    const [cls, txt] = syncing ? ['', '올리는 중…'] : syncFailed ? ['bad', '연결 안 됨']
+      : curSite && st.pendingIds.includes(curSite.id) ? ['warn', '올리기 전'] : ['ok', '저장됨'];
+    ds.className = cls;
+    ds.innerHTML = (syncing ? I.sync : I.cloud) + txt;
   }
 }
 // 연동·백업 창: 지금 동기화, 백업 파일, 팀 코드 다시 입력
@@ -946,12 +963,13 @@ function viewDoc(site, focusSheet) {
     <div class="tb" id="tb">
       <div class="tools row">
         <button class="tool" id="bk" aria-label="현장 목록">${I.back}</button>
-        <div class="ttl grow">${esc(site.name)}<small>${site.kind}검사 · 서식 ${site.sheets.length}장<span id="docsync"></span></small></div>
+        <div class="ttl grow">${esc(site.name)}<small id="docsync">${SYNC_URL ? '&nbsp;' : `${site.kind}검사`}</small></div>
         <button class="tool ${site.sign ? 'done' : ''}" id="sg">${I.sign}${site.sign ? '서명함' : '서명'}</button>
         <button class="tool pri" id="send">${I.send}${SEND_HTML}</button>
       </div>
       <div class="snav">
         <button class="cur" id="cur"><span class="grow"><small id="curno"></small><b id="curnm"></b></span><span class="lst">${I.list}목록</span></button>
+        <button class="tool zoom" id="zoom"></button>
         <button class="tool" id="prev" aria-label="이전 장">${I.up}<span class="long">이전 장</span></button>
         <button class="tool" id="next" aria-label="다음 장">${I.dn}<span class="long">다음 장</span></button>
       </div>
@@ -1090,12 +1108,52 @@ function viewDoc(site, focusSheet) {
     const on = modal.querySelector('.toc .on');
     if (on) on.scrollIntoView({ block: 'nearest' });
   };
+  // 폰: 한 장 보기(서식 한 장이 화면에 다 보임) ↔ 크게 보기(패드 크기, 좌우로 밀기). 현장을 열면 한 장 보기.
+  // 한 장 보기에서는 칸이 작아 잘못 누르기 쉬워서, 서식을 누르면 먼저 그 자리를 크게 보여 준다.
+  const PHONE = matchMedia('(max-width: 700px)');
+  let big = false;
+  const showZoom = () => {
+    $('#zoom').innerHTML = big ? I.zout : I.zin;
+    $('#zoom').setAttribute('aria-label', big ? '한 장 보기' : '크게 보기');
+  };
+  // 손가락 아래(버튼이면 화면 가운데)에 있던 서식 자리가 바뀐 뒤에도 그 자리에 오게 맞춘다
+  function setZoom(on, fx = innerWidth / 2, fy = (tb.offsetHeight + innerHeight) / 2) {
+    if (on === big) return;
+    const p = list.find(q => q.page.getBoundingClientRect().bottom >= fy) || list[list.length - 1];
+    let u = 0, v = 0;
+    if (p) { const r = p.page.getBoundingClientRect(); u = (fx - r.left) / r.width; v = (fy - r.top) / r.height; }
+    big = on;
+    document.body.classList.toggle('big', on);
+    showZoom();
+    if (p) {
+      const r = p.page.getBoundingClientRect();
+      scrollBy(0, r.top + v * r.height - fy);
+      p.page.parentElement.scrollLeft += r.left + u * r.width - fx;   // 크게 볼 때만 좌우로 밀린다
+    }
+    pages.forEach(paint);
+    if (active) reveal(active.p, active.f);
+  }
+  showZoom();
+  $('#zoom').onclick = () => setZoom(!big);
+  // 두 손가락으로 벌리면 크게, 오므리면 한 장 보기 (브라우저 화면 확대 대신)
+  let pinch = null;
+  const span = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  $('#doc').addEventListener('touchstart', e => {
+    const t = e.touches;
+    pinch = t.length === 2 && PHONE.matches ? { d: span(t), x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 } : null;
+  }, { passive: true });
+  $('#doc').addEventListener('touchmove', e => {
+    if (!pinch || e.touches.length !== 2) return;
+    const s = span(e.touches) / pinch.d;
+    if (s > 1.2 || s < 0.83) { setZoom(s > 1, pinch.x, pinch.y); pinch = null; }
+  }, { passive: true });
+  $('#doc').addEventListener('gesturestart', e => { if (PHONE.matches) e.preventDefault(); });   // 아이폰 사파리
   addEventListener('scroll', onScroll, { passive: true });
   viewCleanup = () => {
     io.disconnect(); ro.disconnect(); clearTimeout(pdfTimer);
     if (window.visualViewport) ['resize', 'scroll'].forEach(t => visualViewport.removeEventListener(t, onVV));
     removeEventListener('scroll', onScroll);
-    document.body.classList.remove('editing');
+    document.body.classList.remove('editing', 'big');
   };
   const rerender = () => { viewToken++; viewCleanup(); viewDoc(site); };
 
@@ -1135,6 +1193,7 @@ function viewDoc(site, focusSheet) {
   }, true);
   $('#doc').addEventListener('click', e => {
     if (palm || Date.now() - inkAt < 600) return;
+    if (PHONE.matches && !big && e.target.closest('.page')) { setZoom(true, e.clientX, e.clientY); return; }
     const hit = e.target.closest('.hit');
     if (hit && hit.dataset.sig != null) {
       const p = pages.get(hit.closest('section').dataset.sh), j = +hit.dataset.sig;
